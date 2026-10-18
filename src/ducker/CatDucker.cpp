@@ -1,4 +1,5 @@
 #include "CatDucker.h"
+#include "../common/Viz.h"
 
 using namespace catfx;
 
