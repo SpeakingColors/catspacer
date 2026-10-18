@@ -41,14 +41,16 @@ void FxBase::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals nd;
     auto main = getBusBuffer(buffer, true, 0);
-    inLevel = main.getMagnitude(0, main.getNumSamples());
+    const float decay = (float) std::pow(10.0, -(double) main.getNumSamples() / std::max(1.0, fs));
+    const float inMag = main.getMagnitude(0, main.getNumSamples());
+    inLevel = std::max(inMag, inLevel.load() * decay);
     if (hasSidechain && getBusCount(true) > 1 && getBus(true, 1)->isEnabled())
     {
         auto sc = getBusBuffer(buffer, true, 1);
         process(main, &sc);
     }
     else process(main, nullptr);
-    outLevel = main.getMagnitude(0, main.getNumSamples());
+    outLevel = std::max(main.getMagnitude(0, main.getNumSamples()), outLevel.load() * decay);
 }
 
 juce::AudioProcessorEditor* FxBase::createEditor() { return new FxEditor(*this); }

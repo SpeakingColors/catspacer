@@ -4,19 +4,19 @@ using namespace catfx;
 
 CatDucker::CatDucker()
     : FxBase("Cat Spacer",
-        { { "amount", "Amount", " %", 0.f, 100.f, 50.f },
-          { "lo", "Low cut", " Hz", 20.f, 20000.f, 20.f, 400.f },
-          { "hi", "High cut", " Hz", 20.f, 20000.f, 20000.f, 4000.f },
-          { "range", "Max cut", " dB", 3.f, 36.f, 18.f },
-          { "floor", "Floor", " dB", 10.f, 70.f, 40.f },
-          { "attack", "Attack", " ms", 1.f, 300.f, 20.f, 40.f },
-          { "release", "Release", " ms", 10.f, 2000.f, 160.f, 200.f },
-          { "pan", "Pan", "", -100.f, 100.f, 0.f },
-          { "mix", "Mix", " %", 0.f, 100.f, 100.f } },
-        { { "mode", "Stereo mode", { "L/R", "M/S" }, 0 },
-          { "freeze", "Freeze", { "Off", "On" }, 0 },
-          { "audition", "Audition", { "Off", "On" }, 0 },
-          { "latency", "Latency", { "Low 512", "Normal 1024", "High 2048" }, 1 } }, true)
+        { { "amount", "Amount", " %", 0.f, 100.f, 50.f, 0.f, "Amount: how much the main sound is turned down in the bands where the sidechain is loud. 0 = nothing, 100 = full." },
+          { "lo", "Low cut", " Hz", 20.f, 20000.f, 20.f, 400.f, "Low cut: sidechain content below this frequency does not trigger any ducking (stops a kick from carving the whole mix, for example)." },
+          { "hi", "High cut", " Hz", 20.f, 20000.f, 20000.f, 4000.f, "High cut: sidechain content above this frequency does not trigger any ducking." },
+          { "range", "Max cut", " dB", 3.f, 36.f, 18.f, 0.f, "Max cut: the deepest reduction any band can get at 100 % amount." },
+          { "floor", "Floor", " dB", 10.f, 70.f, 40.f, 0.f, "Floor: how far below the loudest sidechain band a band can be and still cause ducking. Lower = only the strongest bands duck, higher = more bands duck." },
+          { "attack", "Attack", " ms", 1.f, 300.f, 20.f, 40.f, "Attack: how fast the ducking engages when the sidechain gets loud." },
+          { "release", "Release", " ms", 10.f, 2000.f, 160.f, 200.f, "Release: how long the ducking takes to let go after the sidechain stops. Short = pumping, long = smooth." },
+          { "pan", "Pan", "", -100.f, 100.f, 0.f, 0.f, "Pan: moves the effect toward one side. Left of centre applies less to the right channel, right of centre applies less to the left (or to side instead of mid in M/S)." },
+          { "mix", "Mix", " %", 0.f, 100.f, 100.f, 0.f, "Mix: dry/wet blend of the ducked signal." } },
+        { { "mode", "Stereo mode", { "L/R", "M/S" }, 0, "Stereo mode: L/R ducks left and right, M/S ducks mid and side." },
+          { "freeze", "Freeze", { "Off", "On" }, 0, "Freeze: holds the current sidechain curve so it keeps carving the same gaps (a static EQ taken from the sidechain)." },
+          { "audition", "Audition", { "Off", "On" }, 0, "Audition: listen to the sidechain as the plugin hears it (after low and high cut). Useful for setting the cuts." },
+          { "latency", "Latency", { "Low 512", "Normal 1024", "High 2048" }, 1, "Latency: the delay this plugin adds (host compensates). Low reacts fastest but has a rougher low end, High is the cleanest." } }, true)
 {
     for (int i = 0; i < kBands; ++i) { vMain[i] = vSide[i] = -100.f; vCut[i] = 0.f; }
     apvts.addParameterListener("latency", this);
@@ -116,7 +116,8 @@ void CatDucker::frame(int ch)
             if (bandHz[b] < lo || bandHz[b] > hi) target = 0.f;
             const float a = target > gainDb[b] ? aA : aR;   // rising cut uses the attack time
             gainDb[b] = a * gainDb[b] + (1.f - a) * target;
-            vSide[b] = db; vCut[b] = gainDb[b];
+            { const float oct = bandHz[b] < lo ? std::log2(lo / bandHz[b]) : bandHz[b] > hi ? std::log2(bandHz[b] / hi) : 0.f; vSide[b] = db - std::min(40.f, oct * 12.f); }
+            vCut[b] = gainDb[b];
             vMain[b] = juce::Decibels::gainToDecibels(mc[b] ? std::sqrt(mp[b] / (float) mc[b]) / ((float) M * 0.25f) : 0.f, -100.f);
         }
     }
@@ -175,28 +176,80 @@ void CatDucker::process(juce::AudioBuffer<float>& buf, const juce::AudioBuffer<f
     if (audition) for (int c = 0; c < nch; ++c) for (int i = 0; i < n; ++i) buf.getWritePointer(c)[i] = audBuf[(size_t) i];
 }
 
-void CatDucker::paintViz(juce::Graphics& g, juce::Rectangle<float> r)
+std::vector<catfx::PanelSpec> CatDucker::panels() const
 {
-    r = r.reduced(4.f, 18.f);
-    auto xAt = [&](int b) { return r.getX() + r.getWidth() * (float) b / (float) (kBands - 1); };
-    auto curve = [&](auto&& db, float lo, float hi)
+    return { { "Spectrum and cut", { "amount", "lo", "hi", "range", "floor" }, {}, 4.2f },
+             { "Timing", { "attack", "release" }, { "latency" }, 1.6f },
+             { "Stereo", { "pan", "mix" }, { "mode", "freeze", "audition" }, 1.5f } };
+}
+
+void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
+{
+    using namespace catfx::viz;
+    g.setFont(juce::FontOptions(11.f));
+    if (idx == 0)
     {
-        juce::Path p;
-        for (int b = 0; b < kBands; ++b)
+        const float range = std::max(3.f, get("range"));
+        auto p = r.withTrimmedLeft(34.f).withTrimmedRight(8.f).withTrimmedTop(16.f).withTrimmedBottom(14.f);
+        const float cy = p.getCentreY();
+        g.setColour(bg().brighter(0.04f)); g.fillRect(p);
+        freqAxis(g, p, 30.f, 20000.f);
+        // left axis: 0 dB in the centre, cut applied below it
+        g.setFont(juce::FontOptions(10.f));
+        for (float v = 0.f; v <= range + 0.01f; v += (range > 18.f ? 12.f : 6.f))
         {
-            const float v = juce::jlimit(0.f, 1.f, (db(b) - lo) / (hi - lo));
-            const float y = r.getBottom() - v * r.getHeight();
-            b ? p.lineTo(xAt(b), y) : p.startNewSubPath(xAt(b), y);
+            const float y = cy + v / range * (p.getBottom() - cy);
+            g.setColour(v == 0.f ? dim().withAlpha(0.8f) : grid()); g.drawHorizontalLine((int) y, p.getX(), p.getRight());
+            g.setColour(v == 0.f ? juce::Colours::white : dim()); g.drawText(v == 0.f ? "0" : "-" + juce::String((int) v), (int) p.getX() - 30, (int) y - 6, 27, 12, juce::Justification::right);
         }
-        return p;
-    };
-    auto mainP = curve([&](int b) { return vMain[b].load(); }, -90.f, -10.f);
-    juce::Path fill(mainP); fill.lineTo(r.getRight(), r.getBottom()); fill.lineTo(r.getX(), r.getBottom()); fill.closeSubPath();
-    g.setColour(juce::Colour(0xff9a9690).withAlpha(0.18f)); g.fillPath(fill);
-    g.setColour(juce::Colour(0xff9a9690)); g.strokePath(mainP, juce::PathStrokeType(1.2f));
-    g.setColour(juce::Colour(0xff5aa8ff)); g.strokePath(curve([&](int b) { return vSide[b].load(); }, -90.f, -10.f), juce::PathStrokeType(2.f));
-    g.setColour(juce::Colours::white.withAlpha(0.9f)); g.strokePath(curve([&](int b) { return vCut[b].load(); }, 0.f, std::max(3.f, get("range"))), juce::PathStrokeType(2.f));
-    auto mark = [&](float hz) { const float t = std::log(hz / 30.f) / std::log(20000.f / 30.f); const float x = r.getX() + r.getWidth() * juce::jlimit(0.f, 1.f, t);
-        g.setColour(juce::Colour(0xfff2a23c).withAlpha(0.7f)); g.drawLine(x, r.getY(), x, r.getBottom(), 1.f); };
-    mark(get("lo")); mark(get("hi"));
+        g.setColour(dim()); g.drawText("cut dB", (int) p.getX() - 34, (int) p.getY() - 14, 40, 11, juce::Justification::left);
+        auto xAt = [&](int b) { return p.getX() + p.getWidth() * (float) b / (float) (kBands - 1); };
+        auto spec = [&](auto&& db) { juce::Path q; for (int b = 0; b < kBands; ++b) { const float v = juce::jlimit(0.f, 1.f, (db(b) + 90.f) / 80.f); const float y = p.getBottom() - v * (cy - p.getY()) - (p.getBottom() - cy); b ? q.lineTo(xAt(b), y) : q.startNewSubPath(xAt(b), y); } return q; };
+        // spectra live in the upper half, the cut curve hangs below the 0 dB line
+        auto mainP = spec([&](int b) { return vMain[b].load(); });
+        juce::Path fill(mainP); fill.lineTo(p.getRight(), cy); fill.lineTo(p.getX(), cy); fill.closeSubPath();
+        g.setColour(dim().withAlpha(0.18f)); g.fillPath(fill); g.setColour(dim()); g.strokePath(mainP, juce::PathStrokeType(1.2f));
+        g.setColour(blue()); g.strokePath(spec([&](int b) { return vSide[b].load(); }), juce::PathStrokeType(2.f));
+        juce::Path cut;
+        for (int b = 0; b < kBands; ++b) { const float y = cy + juce::jlimit(0.f, range, vCut[b].load()) / range * (p.getBottom() - cy); b ? cut.lineTo(xAt(b), y) : cut.startNewSubPath(xAt(b), y); }
+        g.setColour(juce::Colours::white); g.strokePath(cut, juce::PathStrokeType(2.2f));
+        for (float hz : { get("lo"), get("hi") }) { const float x = freqToX(hz, p, 30.f, 20000.f); g.setColour(accent().withAlpha(0.7f)); g.drawVerticalLine((int) x, p.getY(), p.getBottom()); }
+        g.setFont(juce::FontOptions(11.f)); g.setColour(dim());
+        g.drawText(hasSc.load() ? "sidechain (blue, after low/high cut), main (grey), cut applied (white, dB below 0)" : "no sidechain connected: using the main signal as sidechain", (int) p.getX(), (int) r.getY() + 1, (int) p.getWidth(), 11, juce::Justification::left);
+    }
+    else if (idx == 1)  // attack / release shape
+    {
+        const float at = get("attack"), rl = get("release"), tot = at * 3.f + rl * 3.f;
+        auto p = r.withTrimmedLeft(8.f).withTrimmedRight(8.f).withTrimmedTop(16.f).withTrimmedBottom(14.f);
+        g.setColour(bg().brighter(0.04f)); g.fillRect(p);
+        juce::Path q;
+        const int N = 120;
+        for (int i = 0; i <= N; ++i)
+        {
+            const float t = tot * (float) i / (float) N;
+            const float v = t < at * 3.f ? 1.f - std::exp(-t / at) : (1.f - std::exp(-3.f)) * std::exp(-(t - at * 3.f) / rl);
+            const float x = p.getX() + (float) i / (float) N * p.getWidth(), y = p.getBottom() - v * p.getHeight() * 0.9f;
+            i ? q.lineTo(x, y) : q.startNewSubPath(x, y);
+        }
+        g.setColour(juce::Colours::white); g.strokePath(q, juce::PathStrokeType(2.f));
+        g.setColour(dim()); g.drawText("cut depth over time", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+        g.drawText("attack " + juce::String(at, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::left);
+        g.drawText("release " + juce::String(rl, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::right);
+    }
+    else                // stereo balance and mix
+    {
+        const float pan = get("pan") * 0.01f, ls = 1.f - std::max(0.f, pan), rs = 1.f - std::max(0.f, -pan), mix = get("mix");
+        const bool ms = get("mode") > 0.5f;
+        auto area = r.reduced(10.f, 12.f);
+        g.setColour(dim()); g.drawText("effect amount per channel", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+        auto bar = [&](juce::Rectangle<float> b, float v, const juce::String& n)
+        { g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v)); g.setColour(juce::Colours::white); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", b.toNearestInt(), juce::Justification::centred); };
+        bar(area.removeFromTop(22.f), ls, ms ? "mid" : "L"); area.removeFromTop(8.f);
+        bar(area.removeFromTop(22.f), rs, ms ? "side" : "R"); area.removeFromTop(16.f);
+        g.setColour(grid()); g.fillRect(area.removeFromTop(10.f).withTrimmedLeft(0.f));
+        auto m = r.reduced(10.f, 12.f); m = m.withTop(r.getY() + 12.f + 22.f + 8.f + 22.f + 16.f).withHeight(10.f);
+        g.setColour(blue().withAlpha(0.8f)); g.fillRect(m.withWidth(m.getWidth() * (1.f - mix * 0.01f)));
+        g.setColour(green()); g.fillRect(m.withTrimmedLeft(m.getWidth() * (1.f - mix * 0.01f)));
+        g.setColour(dim()); g.drawText("dry " + juce::String(100 - (int) mix) + "%   wet " + juce::String((int) mix) + "%", m.toNearestInt().withY(m.toNearestInt().getBottom() + 2).withHeight(11), juce::Justification::centred);
+    }
 }

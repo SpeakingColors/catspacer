@@ -4,8 +4,10 @@
 
 namespace catfx
 {
-struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; };
-struct ChoiceSpec { juce::String id, name; juce::StringArray items; int def = 0; };
+struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; juce::String tip = {}; };
+struct ChoiceSpec { juce::String id, name; juce::StringArray items; int def = 0; juce::String tip = {}; };
+// A panel groups one display with the controls that drive it (controls are drawn underneath it).
+struct PanelSpec { juce::String title; std::vector<juce::String> knobs, choices; float weight = 1.f; };
 
 // Shared base for the cat FX: parameters from specs, stereo in/out (optional sidechain), state, generic editor.
 class FxBase : public juce::AudioProcessor
@@ -19,6 +21,11 @@ public:
     virtual void process(juce::AudioBuffer<float>& main, const juce::AudioBuffer<float>* sidechain) = 0;
     virtual void paintViz(juce::Graphics&, juce::Rectangle<float> area) { juce::ignoreUnused(area); }
     virtual juce::String vizCaption() const { return {}; }
+    // Panel layout: when panels() is empty the editor uses one big display and a grid of knobs.
+    virtual std::vector<PanelSpec> panels() const { return {}; }
+    virtual void paintPanel(int index, juce::Graphics&, juce::Rectangle<float> area) { juce::ignoreUnused(index, area); }
+    bool tipsOn() const { return (bool) apvts.state.getProperty("tips", true); }
+    void setTipsOn(bool b) { apvts.state.setProperty("tips", b, nullptr); }
 
     // Optional factory presets (our own) and the randomize button
     struct Preset { juce::String name; std::vector<std::pair<juce::String, float>> values; };
@@ -51,7 +58,7 @@ public:
     const std::vector<KnobSpec> knobSpecs;
     const std::vector<ChoiceSpec> choiceSpecs;
     juce::AudioProcessorValueTreeState apvts;
-    std::atomic<float> inLevel { 0.f }, outLevel { 0.f };
+    std::atomic<float> inLevel { 0.f }, outLevel { 0.f };   // linear peak, held and falling 20 dB per second
     const bool hasSidechain;
 protected:
     double fs = 44100.0;

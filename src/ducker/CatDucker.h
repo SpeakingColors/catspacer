@@ -13,8 +13,8 @@ public:
     ~CatDucker() override { apvts.removeParameterListener("latency", this); }
     void prepare(double sr, int maxBlock) override;
     void process(juce::AudioBuffer<float>&, const juce::AudioBuffer<float>*) override;
-    void paintViz(juce::Graphics&, juce::Rectangle<float>) override;
-    juce::String vizCaption() const override { return hasSc.load() ? "Sidechain spectrum (blue), main (grey), cut applied (white)" : "No sidechain connected: using the main signal as the sidechain"; }
+    std::vector<catfx::PanelSpec> panels() const override;
+    void paintPanel(int index, juce::Graphics&, juce::Rectangle<float>) override;
     juce::StringArray randomExclude() const override { return { "mix", "freeze", "mode", "lo", "hi", "latency", "audition" }; }
     std::vector<Preset> presets() const override
     {
