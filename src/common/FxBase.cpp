@@ -33,7 +33,25 @@ static std::vector<ChoiceSpec> withLimiter(std::vector<ChoiceSpec> c)
 
 FxBase::FxBase(const juce::String& name, std::vector<KnobSpec> k, std::vector<ChoiceSpec> c0, bool sc)
     : AudioProcessor(makeBuses(sc)), knobSpecs(k), choiceSpecs(withLimiter(c0)),
-      apvts(*this, nullptr, "STATE", makeLayout(k, withLimiter(c0))), hasSidechain(sc), pluginName(name) {}
+      apvts(*this, nullptr, "STATE", makeLayout(k, withLimiter(c0))), hasSidechain(sc), pluginName(name)
+{
+    for (auto& cs : choiceSpecs) if (auto* p = apvts.getParameter(cs.id)) p->addListener(this);
+}
+
+void FxBase::parameterGestureChanged(int index, bool starting)
+{
+    if (starting) return;                              // act when the user has finished picking
+    auto* ps = getParameters()[index];
+    auto* r = dynamic_cast<juce::RangedAudioParameter*>(ps);
+    if (r == nullptr) return;
+    for (auto& cs : choiceSpecs)
+        if (cs.id == r->paramID)
+        {
+            for (auto& kv : choiceDefaults(cs.id, (int) std::lround(get(cs.id))))
+                if (auto* t = apvts.getParameter(kv.first)) t->setValueNotifyingHost(t->convertTo0to1(kv.second));
+            break;
+        }
+}
 
 bool FxBase::isBusesLayoutSupported(const BusesLayout& l) const
 {

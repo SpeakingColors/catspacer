@@ -12,11 +12,11 @@ struct SectionPreset { juce::String name; std::vector<std::pair<juce::String, fl
 struct PanelSpec { juce::String title; std::vector<juce::String> knobs, choices; float weight = 1.f; std::vector<SectionPreset> presets; };
 
 // Shared base for the cat FX: parameters from specs, stereo in/out (optional sidechain), state, generic editor.
-class FxBase : public juce::AudioProcessor
+class FxBase : public juce::AudioProcessor, private juce::AudioProcessorParameter::Listener
 {
 public:
     FxBase(const juce::String& name, std::vector<KnobSpec> knobs, std::vector<ChoiceSpec> choices, bool sidechain = false);
-    ~FxBase() override = default;
+    ~FxBase() override { for (auto& cs : choiceSpecs) if (auto* p = apvts.getParameter(cs.id)) p->removeListener(this); }
 
     // Implemented by each effect
     virtual void prepare(double sampleRate, int maxBlock) = 0;
@@ -33,6 +33,9 @@ public:
     struct Preset { juce::String name; std::vector<std::pair<juce::String, float>> values; };
     virtual std::vector<Preset> presets() const { return {}; }
     virtual juce::StringArray randomExclude() const { return { "out", "vol" }; }
+    // When the user picks an item in a choice menu, these controls move to the values that suit it (for example a squeeze style sets its own amounts).
+    // Only changes made by hand in the editor trigger this (they come with a change gesture), never presets or saved states.
+    virtual std::vector<std::pair<juce::String, float>> choiceDefaults(const juce::String& id, int itemIndex) const { juce::ignoreUnused(id, itemIndex); return {}; }
     void applyPreset(int index);
     void randomize();
     int presetIndex = 0;
@@ -65,6 +68,8 @@ public:
 protected:
     double fs = 44100.0;
 private:
+    void parameterValueChanged(int, float) override {}
+    void parameterGestureChanged(int index, bool starting) override;
     void safetyLimit(juce::AudioBuffer<float>&);
     float limGain = 1.f;
     juce::String pluginName;
