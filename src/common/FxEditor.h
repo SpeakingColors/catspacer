@@ -65,7 +65,8 @@ private:
     struct Panel { juce::String title; std::unique_ptr<catfx::PanelView> view; std::vector<K*> ks; std::vector<C*> cs; float weight = 1.f; };
     void applyTips();
     catfx::FxBase& proc;
-    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" }, tipsBtn { "Tips" };
+    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" }, tipsBtn { "i" };
+    std::unique_ptr<juce::Drawable> logo;
     juce::ComboBox presetBox;
     catui::CatLookAndFeel laf;
     catui::RenderGate gate { *this };

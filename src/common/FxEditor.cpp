@@ -1,4 +1,5 @@
 #include "FxEditor.h"
+#include <catui/FxLogos.h>
 
 FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
 {
@@ -77,6 +78,9 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
     tipsBtn.setTooltip("Turn these hover tips on or off.");
     addAndMakeVisible(tipsBtn);
     applyTips();
+    {   const auto nm = proc.getName();
+        logo = catui::makeFxLogo(nm.containsIgnoreCase("Crusher") ? "crusher" : nm.containsIgnoreCase("Fat") ? "fatcat" : nm.containsIgnoreCase("Spacer") ? "spacer"
+                               : nm.containsIgnoreCase("bass") ? "meowbass" : "meowximizer"); }
     setSize(panelMode ? 980 : 800, panelMode ? 560 : 470);
     gate.onFrame = [this] { if (panelMode) for (auto& pn : panels) pn.view->repaint(); else viz.repaint(); }; // stops while hidden or in the background
     gate.start(30);
@@ -96,17 +100,8 @@ void FxEditor::paint(juce::Graphics& g)
 {
     g.fillAll(catui::Colours::panel());
     g.setColour(catui::Colours::accent()); g.setFont(juce::FontOptions(20.f, juce::Font::bold));
-    {   // cat head tile, one soda pop colour per plugin (same idea as assets/icon.svg)
-        const auto nm = proc.getName();
-        const auto face = nm.containsIgnoreCase("Crusher") ? catui::SodaPop::hotPink() : nm.containsIgnoreCase("Fat") ? catui::SodaPop::amber()
-                        : nm.containsIgnoreCase("Spacer") ? catui::SodaPop::mint() : nm.containsIgnoreCase("bass") ? catui::SodaPop::orchid()
-                        : catui::SodaPop::popSky();
-        auto tile = juce::Rectangle<float>(10.f, 3.f, 38.f, 38.f);
-        g.setColour(juce::Colour(0xff0b0c0f)); g.fillRoundedRectangle(tile, 8.f);
-        g.setColour(face.withAlpha(0.5f)); g.drawRoundedRectangle(tile, 8.f, 1.2f);
-        catui::drawCatHead(g, tile.reduced(4.f), face);
-    }
-    g.drawText(proc.getName(), 56, 8, 260, 26, juce::Justification::left);
+    if (logo) logo->drawWithin(g, juce::Rectangle<float>(8.f, 1.f, 42.f, 42.f), juce::RectanglePlacement::centred, 1.f);
+    g.drawText(proc.getName(), 58, 8, 260, 26, juce::Justification::left);
     if (panelMode)
     {
         g.setFont(juce::FontOptions(11.f, juce::Font::bold));
