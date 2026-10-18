@@ -110,7 +110,7 @@ void FxEditor::paint(juce::Graphics& g)
         {
             auto b = pn.view->getBounds();
             g.setColour(catui::Colours::panelLight()); g.fillRoundedRectangle(b.getX() - 4.f, b.getY() - 22.f, b.getWidth() + 8.f, (float) getHeight() - b.getY() + 14.f, 8.f);
-            g.setColour(catui::Colours::dim()); g.drawText(pn.title.toUpperCase(), b.getX() + 2, b.getY() - 19, b.getWidth(), 14, juce::Justification::left);
+            g.setColour(catui::SodaPop::mistLilac()); g.drawText(pn.title.toUpperCase(), b.getX() + 2, b.getY() - 19, b.getWidth(), 14, juce::Justification::left);
         }
     }
 }

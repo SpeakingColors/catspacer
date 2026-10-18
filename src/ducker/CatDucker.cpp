@@ -201,9 +201,9 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
         {
             const float y = cy + v / range * (p.getBottom() - cy);
             g.setColour(v == 0.f ? dim().withAlpha(0.8f) : grid()); g.drawHorizontalLine((int) y, p.getX(), p.getRight());
-            g.setColour(v == 0.f ? juce::Colours::white : dim()); g.drawText(v == 0.f ? "0" : "-" + juce::String((int) v), (int) p.getX() - 30, (int) y - 6, 27, 12, juce::Justification::right);
+            g.setColour(v == 0.f ? juce::Colours::white : green()); g.drawText(v == 0.f ? "0" : "-" + juce::String((int) v), (int) p.getX() - 30, (int) y - 6, 27, 12, juce::Justification::right);
         }
-        g.setColour(dim()); g.drawText("cut dB", (int) p.getX() - 34, (int) p.getY() - 14, 40, 11, juce::Justification::left);
+        g.setColour(accent()); g.drawText("cut dB", (int) p.getX() - 36, (int) p.getY() - 14, 34, 11, juce::Justification::right);
         auto xAt = [&](int b) { return p.getX() + p.getWidth() * (float) b / (float) (kBands - 1); };
         auto spec = [&](auto&& db) { juce::Path q; for (int b = 0; b < kBands; ++b) { const float v = juce::jlimit(0.f, 1.f, (db(b) + 90.f) / 80.f); const float y = p.getBottom() - v * (cy - p.getY()) - (p.getBottom() - cy); b ? q.lineTo(xAt(b), y) : q.startNewSubPath(xAt(b), y); } return q; };
         // spectra live in the upper half, the cut curve hangs below the 0 dB line
@@ -218,7 +218,7 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
         g.setFont(juce::FontOptions(11.f)); g.setColour(dim());
         if (hasSc.load())
         {
-            int x = (int) p.getX();
+            int x = (int) p.getX() + 8;
             for (auto [txt, col] : { std::pair<const char*, juce::Colour>{ "sidechain", blue() }, { "main", dim() }, { "cut applied (dB below 0)", juce::Colours::white } })
             { g.setColour(col); const int w = juce::GlyphArrangement::getStringWidthInt(g.getCurrentFont(), txt) + 14; g.drawText(txt, x, (int) r.getY() + 1, w, 11, juce::Justification::left); x += w; }
         }
@@ -242,21 +242,21 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
             i ? q.lineTo(x, y) : q.startNewSubPath(x, y);
         }
         g.setColour(juce::Colours::white); g.strokePath(q, juce::PathStrokeType(2.f));
-        g.setColour(dim()); g.drawText("cut depth over time", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
-        g.drawText("attack " + juce::String(at, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::left);
-        g.drawText("release " + juce::String(rl, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::right);
+        g.setColour(green()); g.drawText("cut depth over time", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+        g.setColour(blue()); g.drawText("attack " + juce::String(at, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::left);
+        g.setColour(accent()); g.drawText("release " + juce::String(rl, 0) + " ms", p.toNearestInt().withY((int) p.getBottom() + 1).withHeight(11), juce::Justification::right);
     }
     else                // stereo balance and mix
     {
         const float pan = get("pan") * 0.01f, ls = 1.f - std::max(0.f, pan), rs = 1.f - std::max(0.f, -pan), mix = get("mix");
         const bool ms = get("mode") > 0.5f;
         auto area = r.reduced(10.f, 8.f);
-        g.setColour(dim()); g.drawText("effect amount per channel", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+        g.setColour(blue()); g.drawText("effect amount per channel", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
         area.removeFromTop(12.f);
         auto bar = [&](float v, const juce::String& n)
         {
             auto row = area.removeFromTop(16.f);
-            g.setColour(dim()); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", row.removeFromLeft(62.f).toNearestInt(), juce::Justification::left);
+            g.setColour(n == "R" || n == "side" ? green() : blue()); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", row.removeFromLeft(62.f).toNearestInt(), juce::Justification::left);
             auto b = row.withSizeKeepingCentre(row.getWidth(), 8.f);
             g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v));
         };
@@ -265,7 +265,7 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
         auto m = area.removeFromTop(8.f);
         g.setColour(blue().withAlpha(0.8f)); g.fillRect(m.withWidth(m.getWidth() * (1.f - mix * 0.01f)));
         g.setColour(green()); g.fillRect(m.withTrimmedLeft(m.getWidth() * (1.f - mix * 0.01f)));
-        g.setColour(dim()); g.drawText("dry " + juce::String(100 - (int) mix) + "%   wet " + juce::String((int) mix) + "%", area.removeFromTop(13.f).toNearestInt(), juce::Justification::centred);
+        { auto dw = area.removeFromTop(13.f).toNearestInt(); g.setColour(blue()); g.drawText("dry " + juce::String(100 - (int) mix) + "%", dw.removeFromLeft(dw.getWidth() / 2), juce::Justification::right); g.setColour(green()); g.drawText("   wet " + juce::String((int) mix) + "%", dw, juce::Justification::left); }
         meter(g, area.withTrimmedTop(2.f), outLevel.load(), "OUT dB");
     }
 }
