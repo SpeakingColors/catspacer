@@ -39,20 +39,22 @@ for line in open(txt_path, encoding="utf-8").read().splitlines():
 para = lambda k: [p.strip() for p in "\n".join(sec.get(k, [])).split("\n\n") if p.strip()]
 bullets = lambda k: [l[2:].strip() for l in sec.get(k, []) if l.startswith("- ")]
 
-NAVY, TEAL, PINK, INK = colors.HexColor("#14204a"), colors.HexColor("#01c9ae"), colors.HexColor("#e0147a"), colors.HexColor("#1b1b1f")
+BG, PANEL = colors.HexColor("#17163a"), colors.HexColor("#221f4d")      # navy page, slightly lighter cards
+NAVY, TEAL, PINK, INK = colors.HexColor("#e6e4ff"), colors.HexColor("#01fcdc"), colors.HexColor("#ff7bb1"), colors.HexColor("#dcdaf5")
+PURPLE, LILAC, DIM = colors.HexColor("#a43dff"), colors.HexColor("#c7c9ff"), colors.HexColor("#9b98c8")
 st = lambda n, **k: ParagraphStyle(n, fontName=k.pop("font", "Helvetica"), **k)
 H1 = st("h1", fontSize=24, leading=28, textColor=NAVY, font="Helvetica-Bold")
-H2 = st("h2", fontSize=14, leading=18, textColor=PINK, font="Helvetica-Bold", spaceBefore=10, spaceAfter=4)
+H2 = st("h2", fontSize=14, leading=18, textColor=LILAC, font="Helvetica-Bold", spaceBefore=10, spaceAfter=4)
 B = st("b", fontSize=10, leading=14, textColor=INK)
-SM = st("s", fontSize=8.5, leading=11.5, textColor=colors.HexColor("#444444"))
+SM = st("s", fontSize=8.5, leading=11.5, textColor=DIM)
 CELL = st("c", fontSize=9, leading=12, textColor=INK)
-CELLB = st("cb", fontSize=9, leading=12, textColor=NAVY, font="Helvetica-Bold")
+CELLB = st("cb", fontSize=9, leading=12, textColor=PINK, font="Helvetica-Bold")
 
 def logo():
     d = Drawing(40, 36)
-    d.add(Polygon([4, 18, 7, 34, 18, 24], fillColor=TEAL, strokeColor=None)); d.add(Polygon([36, 18, 33, 34, 22, 24], fillColor=TEAL, strokeColor=None))
-    d.add(Circle(20, 14, 14, fillColor=TEAL, strokeColor=None))
-    d.add(Circle(14, 16, 2, fillColor=NAVY, strokeColor=None)); d.add(Circle(26, 16, 2, fillColor=NAVY, strokeColor=None))
+    d.add(Polygon([4, 18, 7, 34, 18, 24], fillColor=PURPLE, strokeColor=None)); d.add(Polygon([36, 18, 33, 34, 22, 24], fillColor=PURPLE, strokeColor=None))
+    d.add(Circle(20, 14, 14, fillColor=PURPLE, strokeColor=None))
+    d.add(Circle(14, 16, 2.2, fillColor=TEAL, strokeColor=None)); d.add(Circle(26, 16, 2.2, fillColor=TEAL, strokeColor=None))
     return d
 
 esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -88,9 +90,9 @@ for title, kids, chs in panels:
             rows.append([Paragraph(esc(g[1]), CELLB), Paragraph("%s to %s%s<br/>default %s%s" % (fmt(g[3]), fmt(g[4]), esc(g[2]), fmt(g[5]), esc(g[2])), CELL), Paragraph(esc(g[7]), CELL)])
     if not rows: continue
     t = Table(rows, colWidths=[28 * mm, 40 * mm, 102 * mm], repeatRows=0)
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#d6d8ea")),
-                           ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("LEFTPADDING", (0, 0), (-1, -1), 2)]))
-    story.append(KeepTogether([Paragraph(esc(title), st("ph", fontSize=11.5, leading=15, textColor=TEAL, font="Helvetica-Bold", spaceBefore=6, spaceAfter=2)), t]))
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BACKGROUND", (0, 0), (-1, -1), PANEL), ("LINEBELOW", (0, 0), (-1, -1), 0.5, colors.HexColor("#3a3680")),
+                           ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("LEFTPADDING", (0, 0), (-1, -1), 6)]))
+    story.append(KeepTogether([Paragraph(esc(title), st("ph", fontSize=11.5, leading=15, textColor=TEAL, font="Helvetica-Bold", spaceBefore=8, spaceAfter=4)), t]))
 tips = bullets("Recommendations")
 if tips:
     story.append(Paragraph("Recommendations", H2))
@@ -105,7 +107,10 @@ for t in ["Windows: run the installer (.exe). macOS: open the installer (.pkg or
     story.append(Paragraph("&bull; " + t, B))
 
 def footer(c, d):
-    c.saveState(); c.setFont("Helvetica", 8); c.setFillColor(colors.HexColor("#777777"))
+    c.saveState(); c.setFillColor(BG); c.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
+    c.setFillColor(PURPLE); c.rect(0, A4[1] - 5 * mm, A4[0], 5 * mm, stroke=0, fill=1)
+    c.setFillColor(TEAL); c.rect(0, A4[1] - 5.8 * mm, A4[0], 0.8 * mm, stroke=0, fill=1)
+    c.setFont("Helvetica", 8); c.setFillColor(DIM)
     c.drawString(20 * mm, 10 * mm, name + " manual"); c.drawRightString(190 * mm, 10 * mm, "page %d" % d.page); c.restoreState()
 SimpleDocTemplate(out, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=16 * mm, bottomMargin=18 * mm, title=name + " manual", author="SpeakingColors").build(story, onFirstPage=footer, onLaterPages=footer)
 print("wrote", out, "knobs", len(knobs), "choices", len(choices), "panels", len(panels), "presets", len(presets))
