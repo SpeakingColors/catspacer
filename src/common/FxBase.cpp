@@ -54,3 +54,26 @@ void FxBase::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 juce::AudioProcessorEditor* FxBase::createEditor() { return new FxEditor(*this); }
 void FxBase::getStateInformation(juce::MemoryBlock& d) { if (auto xml = apvts.copyState().createXml()) copyXmlToBinary(*xml, d); }
 void FxBase::setStateInformation(const void* d, int s) { if (auto xml = getXmlFromBinary(d, s)) apvts.replaceState(juce::ValueTree::fromXml(*xml)); }
+
+void FxBase::applyPreset(int index)
+{
+    auto list = presets();
+    if (index < 0 || index >= (int) list.size()) return;
+    presetIndex = index;
+    for (auto* p : getParameters())
+        if (auto* r = dynamic_cast<juce::RangedAudioParameter*>(p))
+            r->setValueNotifyingHost(r->getDefaultValue());
+    for (auto& kv : list[(size_t) index].values)
+        if (auto* r = apvts.getParameter(kv.first))
+            r->setValueNotifyingHost(r->convertTo0to1(kv.second));
+}
+
+void FxBase::randomize()
+{
+    juce::Random rnd;
+    const auto skip = randomExclude();
+    for (auto* p : getParameters())
+        if (auto* r = dynamic_cast<juce::RangedAudioParameter*>(p))
+            if (!skip.contains(r->paramID))
+                r->setValueNotifyingHost(rnd.nextFloat());
+}

@@ -26,6 +26,18 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
         c->a = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(p.apvts, spec.id, c->box);
         combos.push_back(std::move(c));
     }
+    auto list = p.presets();
+    if (!list.empty())
+    {
+        for (size_t i = 0; i < list.size(); ++i) presetBox.addItem(list[i].name, (int) i + 1);
+        presetBox.setSelectedId(p.presetIndex + 1, juce::dontSendNotification);
+        presetBox.onChange = [this] { proc.applyPreset(presetBox.getSelectedId() - 1); };
+        prevBtn.onClick = [this] { const int n = presetBox.getNumItems(); presetBox.setSelectedId((presetBox.getSelectedId() - 2 + n) % n + 1, juce::sendNotification); };
+        nextBtn.onClick = [this] { const int n = presetBox.getNumItems(); presetBox.setSelectedId(presetBox.getSelectedId() % n + 1, juce::sendNotification); };
+        addAndMakeVisible(presetBox); addAndMakeVisible(prevBtn); addAndMakeVisible(nextBtn);
+    }
+    randBtn.onClick = [this] { proc.randomize(); };
+    addAndMakeVisible(randBtn);
     setSize(800, 470);
     gate.onFrame = [this] { viz.repaint(); }; // stops while the window is hidden or in the background
     gate.start(30);
@@ -42,8 +54,13 @@ void FxEditor::resized()
 {
     auto r = getLocalBounds().reduced(10);
     auto top = r.removeFromTop(30);
+    randBtn.setBounds(top.removeFromRight(90)); top.removeFromRight(8);
     for (auto it = combos.rbegin(); it != combos.rend(); ++it)
     { (*it)->box.setBounds(top.removeFromRight(130)); (*it)->l.setBounds(top.removeFromRight(90)); top.removeFromRight(10); }
+    {
+        auto tl = top.withTrimmedLeft(200);
+        if (presetBox.isVisible()) { prevBtn.setBounds(tl.removeFromLeft(26)); presetBox.setBounds(tl.removeFromLeft(190)); nextBtn.setBounds(tl.removeFromLeft(26)); }
+    }
     viz.setBounds(r.removeFromTop(220));
     r.removeFromTop(10);
     const int n = (int) knobs.size(), cols = n > 7 ? (n + 1) / 2 : std::max(1, n), rows = (n + cols - 1) / cols;

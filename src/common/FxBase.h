@@ -20,6 +20,14 @@ public:
     virtual void paintViz(juce::Graphics&, juce::Rectangle<float> area) { juce::ignoreUnused(area); }
     virtual juce::String vizCaption() const { return {}; }
 
+    // Optional factory presets (our own) and the randomize button
+    struct Preset { juce::String name; std::vector<std::pair<juce::String, float>> values; };
+    virtual std::vector<Preset> presets() const { return {}; }
+    virtual juce::StringArray randomExclude() const { return { "out", "vol" }; }
+    void applyPreset(int index);
+    void randomize();
+    int presetIndex = 0;
+
     void prepareToPlay(double sr, int bs) override { fs = sr; prepare(sr, bs); }
     void releaseResources() override {}
     bool isBusesLayoutSupported(const BusesLayout&) const override;

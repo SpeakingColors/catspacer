@@ -3,16 +3,18 @@
 using namespace catfx;
 
 CatDucker::CatDucker()
-    : FxBase("Cat Ducker",
-        { { "amount", "Amount", " %", 0.f, 100.f, 80.f },
-          { "thresh", "Threshold", " dB", -80.f, 0.f, -45.f },
-          { "range", "Max cut", " dB", 0.f, 36.f, 18.f },
-          { "attack", "Attack", " ms", 1.f, 200.f, 15.f, 30.f },
-          { "release", "Release", " ms", 10.f, 1000.f, 120.f, 150.f },
-          { "lo", "Focus low", " Hz", 20.f, 2000.f, 80.f, 300.f },
-          { "hi", "Focus high", " Hz", 500.f, 20000.f, 12000.f, 4000.f },
+    : FxBase("Cat Spacer",
+        { { "amount", "Amount", " %", 0.f, 100.f, 50.f },
+          { "lo", "Low cut", " Hz", 20.f, 20000.f, 20.f, 400.f },
+          { "hi", "High cut", " Hz", 20.f, 20000.f, 20000.f, 4000.f },
+          { "range", "Max cut", " dB", 3.f, 36.f, 18.f },
+          { "floor", "Floor", " dB", 10.f, 70.f, 40.f },
+          { "attack", "Attack", " ms", 1.f, 300.f, 20.f, 40.f },
+          { "release", "Release", " ms", 10.f, 2000.f, 160.f, 200.f },
+          { "pan", "Pan", "", -100.f, 100.f, 0.f },
           { "mix", "Mix", " %", 0.f, 100.f, 100.f } },
-        {}, true)
+        { { "mode", "Stereo mode", { "L/R", "M/S" }, 0 },
+          { "freeze", "Freeze", { "Off", "On" }, 0 } }, true)
 {
     for (int i = 0; i < kBands; ++i) { vMain[i] = vSide[i] = -100.f; vCut[i] = 0.f; }
 }
@@ -37,13 +39,15 @@ void CatDucker::prepare(double sr, int)
         binBand[k] = best;
     }
     for (auto& g : gainDb) g = 0.f;
-    counter = 0;
+    counter = 0; refS = -100.f; for (auto& f : frozenDb) f = -100.f;
     setLatencySamples(kN);
 }
 
 void CatDucker::frame(int ch)
 {
     auto& m = main[ch];
+    const float pan = get("pan") * 0.01f;
+    const float chScale = ch == 0 ? 1.f - std::max(0.f, pan) : 1.f - std::max(0.f, -pan);
     // main spectrum (windowed latest kN samples)
     for (int i = 0; i < kN; ++i) tbuf[(size_t) i] = m.in[(size_t) ((m.pos + i) % kN)] * win[(size_t) i];
     fft.perform(tbuf.data(), fbuf.data(), false);
@@ -55,14 +59,28 @@ void CatDucker::frame(int ch)
         fft.perform(tbuf.data(), sbuf.data(), false);
         float mp[kBands] {}; int mc[kBands] {};
         for (int k = 1; k <= kN / 2; ++k) { pw[binBand[k]] += std::norm(sbuf[(size_t) k]); ++cnt[binBand[k]]; mp[binBand[k]] += std::norm(fbuf[(size_t) k]); ++mc[binBand[k]]; }
-        const float amount = get("amount") / 100.f, thr = get("thresh"), range = get("range"), lo = get("lo"), hi = get("hi");
+        const float amount = get("amount") / 100.f, range = get("range"), floorDb = get("floor"), lo = get("lo"), hi = get("hi");
+        const bool frozen = get("freeze") > 0.5f;
         const float hopMs = 1000.f * (float) kHop / (float) fs;
         const float aA = std::exp(-hopMs / get("attack")), aR = std::exp(-hopMs / get("release"));
+        float dbs[kBands], ref = -100.f;
         for (int b = 0; b < kBands; ++b)
         {
             const float amp = cnt[b] ? std::sqrt(pw[b] / (float) cnt[b]) / ((float) kN * 0.25f) : 0.f;
-            const float db = juce::Decibels::gainToDecibels(amp, -100.f);
-            float target = amount * range * juce::jlimit(0.f, 1.f, (db - thr) / 24.f);
+            dbs[b] = juce::Decibels::gainToDecibels(amp, -100.f);
+            ref = std::max(ref, dbs[b]);
+        }
+        for (int b = 1; b < kBands; ++b) if (!cnt[b]) dbs[b] = dbs[b - 1];      // bands narrower than one FFT bin borrow their neighbour
+        for (int b = kBands - 2; b >= 0; --b) if (!cnt[b] && cnt[b + 1]) dbs[b] = dbs[b + 1];
+        // follow the loudest band slowly (about 15 dB per second) so the effect needs no threshold
+        refS = std::max(ref, refS - 15.f * hopMs * 0.001f);
+        for (int b = 0; b < kBands; ++b)
+        {
+            if (!frozen) frozenDb[b] = dbs[b];
+            const float db = frozenDb[b];
+            float target = 0.f;
+            if (refS > -75.f)
+                target = amount * range * juce::jlimit(0.f, 1.f, (db - (refS - floorDb)) / floorDb);
             if (bandHz[b] < lo || bandHz[b] > hi) target = 0.f;
             const float a = target > gainDb[b] ? aA : aR;   // rising cut uses the attack time
             gainDb[b] = a * gainDb[b] + (1.f - a) * target;
@@ -76,7 +94,7 @@ void CatDucker::frame(int ch)
         const float hz = std::max(1.f, (float) k * (float) fs / (float) kN);
         int b0 = 0; while (b0 < kBands - 2 && bandHz[b0 + 1] < hz) ++b0;
         const float t = juce::jlimit(0.f, 1.f, std::log(hz / bandHz[b0]) / std::log(bandHz[b0 + 1] / bandHz[b0]));
-        const float g = juce::Decibels::decibelsToGain(-(gainDb[b0] * (1.f - t) + gainDb[b0 + 1] * t));
+        const float g = juce::Decibels::decibelsToGain(-(gainDb[b0] * (1.f - t) + gainDb[b0 + 1] * t) * chScale);
         fbuf[(size_t) k] *= g;
         if (k > 0 && k < kN / 2) fbuf[(size_t) (kN - k)] *= g;
     }
@@ -90,6 +108,8 @@ void CatDucker::process(juce::AudioBuffer<float>& buf, const juce::AudioBuffer<f
     const int n = buf.getNumSamples(), nch = juce::jmin(2, buf.getNumChannels());
     hasSc = sc != nullptr;
     const float mix = get("mix") / 100.f;
+    const bool ms = get("mode") > 0.5f && nch == 2;
+    if (ms) for (int i = 0; i < n; ++i) { const float l = buf.getReadPointer(0)[i], r = buf.getReadPointer(1)[i]; buf.getWritePointer(0)[i] = 0.5f * (l + r); buf.getWritePointer(1)[i] = 0.5f * (l - r); }
     for (int i = 0; i < n; ++i)
     {
         float s = 0.f;
@@ -107,22 +127,34 @@ void CatDucker::process(juce::AudioBuffer<float>& buf, const juce::AudioBuffer<f
         side.pos = (side.pos + 1) % kN;
         if (++counter >= kHop) { counter = 0; for (int c = 0; c < nch; ++c) frame(c); }
     }
+    if (ms) for (int i = 0; i < n; ++i) { const float m = buf.getReadPointer(0)[i], s2 = buf.getReadPointer(1)[i]; buf.getWritePointer(0)[i] = m + s2; buf.getWritePointer(1)[i] = m - s2; }
 }
 
 void CatDucker::paintViz(juce::Graphics& g, juce::Rectangle<float> r)
 {
     r = r.reduced(4.f, 18.f);
-    const float w = r.getWidth() / (float) kBands;
-    for (int b = 0; b < kBands; ++b)
+    auto xAt = [&](int b) { return r.getX() + r.getWidth() * (float) b / (float) (kBands - 1); };
+    auto curve = [&](auto&& db, float lo, float hi, float bottomPad)
     {
-        auto bar = [&](float db, juce::Colour c, float alpha)
+        juce::Path p;
+        for (int b = 0; b < kBands; ++b)
         {
-            const float h = juce::jlimit(0.f, 1.f, (db + 90.f) / 90.f) * r.getHeight();
-            g.setColour(c.withAlpha(alpha)); g.fillRect(r.getX() + w * (float) b + 1.f, r.getBottom() - h, w - 2.f, h);
-        };
-        bar(vMain[b].load(), juce::Colour(0xff5aa8ff), 0.5f);
-        bar(vSide[b].load(), juce::Colour(0xfff2a23c), 0.5f);
-        const float cut = juce::jlimit(0.f, 36.f, vCut[b].load());
-        g.setColour(juce::Colour(0xff58e08a)); g.fillRect(r.getX() + w * (float) b + 1.f, r.getY(), w - 2.f, cut / 36.f * 40.f);
-    }
+            const float v = juce::jlimit(0.f, 1.f, (db(b) - lo) / (hi - lo));
+            const float y = r.getBottom() - bottomPad - v * (r.getHeight() - bottomPad);
+            b ? p.lineTo(xAt(b), y) : p.startNewSubPath(xAt(b), y);
+        }
+        return p;
+    };
+    auto mainP = curve([&](int b) { return vMain[b].load(); }, -90.f, -10.f, 0.f);
+    juce::Path fill(mainP); fill.lineTo(r.getRight(), r.getBottom()); fill.lineTo(r.getX(), r.getBottom()); fill.closeSubPath();
+    g.setColour(juce::Colour(0xff9a9690).withAlpha(0.18f)); g.fillPath(fill);
+    g.setColour(juce::Colour(0xff9a9690)); g.strokePath(mainP, juce::PathStrokeType(1.2f));
+    g.setColour(juce::Colour(0xff5aa8ff)); g.strokePath(curve([&](int b) { return vSide[b].load(); }, -90.f, -10.f, 0.f), juce::PathStrokeType(2.f));
+    // cut applied: 0 dB at the bottom band, deeper cuts rise
+    auto cutP = curve([&](int b) { return vCut[b].load(); }, 0.f, std::max(3.f, get("range")), 0.f);
+    g.setColour(juce::Colours::white.withAlpha(0.9f)); g.strokePath(cutP, juce::PathStrokeType(2.f));
+    // low / high cut markers
+    auto mark = [&](float hz) { const float t = std::log(hz / 30.f) / std::log(20000.f / 30.f); const float x = r.getX() + r.getWidth() * juce::jlimit(0.f, 1.f, t);
+        g.setColour(juce::Colour(0xfff2a23c).withAlpha(0.7f)); g.drawLine(x, r.getY(), x, r.getBottom(), 1.f); };
+    mark(get("lo")); mark(get("hi"));
 }

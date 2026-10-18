@@ -4,6 +4,13 @@
 
 Free, open source spectral sidechain ducker for Linux (VST3 and standalone). The sidechain's spectrum carves matching gaps in the main signal so a lead and a vocal or kick can share the mix.
 
+## Features
+- 64 bands (30 Hz to 20 kHz), STFT, no threshold needed: it follows the loudest sidechain band and ducks the bands that are prominent
+- Amount, Low cut, High cut, Attack, Release, Pan, L/R or M/S, Freeze (holds the sidechain curve), Max cut, Floor, Mix
+- Live display: sidechain spectrum, main spectrum and the cut applied (reacts to every control)
+- Presets and Randomize
+- Reported latency: 2048 samples (host compensates)
+
 ## Status
 Early scaffold. It builds in CI (Linux VST3 and standalone) but has not been tuned by ear yet. Free and open source. Donations welcome (link coming).
 

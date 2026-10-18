@@ -47,6 +47,7 @@ private:
         std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> a;
     };
     catfx::FxBase& proc;
+    juce::ComboBox presetBox; juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" };
     catui::CatLookAndFeel laf;
     catui::RenderGate gate { *this };
     catfx::VizView viz;
