@@ -1,0 +1,156 @@
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.1")
+-- Checking for module 'alsa'
+--   Found alsa, version 1.2.11
+-- Checking for modules 'freetype2;fontconfig'
+--   Found freetype2, version 26.1.20
+--   Found fontconfig, version 2.15.0
+-- Checking for module 'gl'
+--   Found gl, version 1.2
+-- Checking for module 'libcurl'
+--   Package 'libcurl', required by 'virtual:world', not found
+-- Checking for modules 'webkit2gtk-4.0;gtk+-x11-3.0'
+--   Package 'webkit2gtk-4.0', required by 'virtual:world', not found
+--   Package 'gtk+-x11-3.0', required by 'virtual:world', not found
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (91.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/runner/work/catspacer/catspacer/build
+[  1%] Building VST3 manifest helper for CatSpacer
+[  3%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/src/CatLookAndFeel.cpp.o
+[  4%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/src/CatFrame.cpp.o
+[  6%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/runner/work/catspacer/catspacer/build/vst3_helpers/CatSpacer
+gmake[3]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+[ 50%] Building CXX object CMakeFiles/vst3_helper.dir/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.cpp.o
+[100%] Linking CXX executable vst3_helper
+[100%] Built target vst3_helper
+[  6%] Built target CatSpacer_vst3_helper
+[  8%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+[  9%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[ 11%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[ 13%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[ 14%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[ 16%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 18%] Building C object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[ 19%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_events/juce_events.cpp.o
+[ 21%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_core/juce_core.cpp.o
+[ 22%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[ 24%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[ 26%] Linking CXX static library libcat_ui.a
+[ 26%] Built target cat_ui
+[ 27%] Building CXX object CMakeFiles/CatSpacer.dir/src/common/FxBase.cpp.o
+[ 29%] Building CXX object CMakeFiles/CatSpacer.dir/src/common/FxEditor.cpp.o
+[ 31%] Building CXX object CMakeFiles/CatSpacer.dir/src/Plugins.cpp.o
+[ 32%] Building CXX object CMakeFiles/CatSpacer.dir/src/ducker/CatDucker.cpp.o
+In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/ducker/CatDucker.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:1:
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
+  292 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:26:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   26 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/Plugins.cpp:2:
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
+  292 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:26:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   26 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.cpp:1:
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
+  292 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:26:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   26 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.cpp:1:
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
+  292 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:26:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   26 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+[ 34%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[ 36%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[ 37%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+[ 39%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+[ 40%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[ 42%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[ 44%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[ 45%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[ 47%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 49%] Building C object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[ 50%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_events/juce_events.cpp.o
+[ 52%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_core/juce_core.cpp.o
+[ 54%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[ 55%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[ 57%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.cpp.o
+[ 59%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
+[ 60%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
+[ 62%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[ 63%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[ 65%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[ 67%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[ 68%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+[ 70%] Linking CXX static library "CatSpacer_artefacts/Release/libCat Spacer_SharedCode.a"
+[ 70%] Built target CatSpacer
+[ 72%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[ 73%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[ 75%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[ 77%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[ 80%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[ 80%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[ 81%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
+[ 83%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
+[ 85%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[ 86%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[ 88%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[ 90%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[ 91%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[ 95%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[ 95%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
+[ 96%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
+[ 98%] Linking CXX executable "CatSpacer_artefacts/Release/Standalone/Cat Spacer"
+[ 98%] Built target CatSpacer_Standalone
+[100%] Linking CXX shared module "CatSpacer_artefacts/Release/VST3/Cat Spacer.vst3/Contents/x86_64-linux/Cat Spacer.so"
+removing moduleinfo.json
+creating /home/runner/work/catspacer/catspacer/build/CatSpacer_artefacts/Release/VST3/Cat Spacer.vst3/Contents/Resources/moduleinfo.json
+[100%] Built target CatSpacer_VST3
