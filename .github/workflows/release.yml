@@ -6,9 +6,15 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Publish a pre-release with this tag (for example v0.1.0). Leave empty to only build.'
+        required: false
+        default: ''
 permissions:
   contents: write
 env:
+  TAGIN: ${{ inputs.tag }}
   NAME: CatSpacer
   PRODUCT: "Cat Spacer"
   CPP: src/ducker/CatDucker.cpp
@@ -50,7 +56,7 @@ jobs:
           cp manual/*.pdf "stage/$NAME-manual.pdf"
       - name: Installer (Inno Setup)
         run: |
-          ver="${GITHUB_REF_NAME#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
           iscc="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
           [ -f "$iscc" ] || { choco install innosetup -y --no-progress; }
           "$iscc" "//DName=$NAME" "//DProduct=$PRODUCT" "//DVersion=$ver" packaging/windows.iss
@@ -74,7 +80,7 @@ jobs:
           cmake --build build --config Release --parallel 4
       - name: Installer (.pkg)
         run: |
-          ver="${GITHUB_REF_NAME#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
           id="io.github.speakingcolors.$(echo "$NAME" | tr 'A-Z' 'a-z')"
           v=$(find build -type d -name "*.vst3" | head -1); a=$(find build -type d -name "*.app" | head -1)
           echo "VST3: $v  APP: $a"
@@ -148,7 +154,7 @@ jobs:
         with: { path: parts }
       - name: Assemble the zip
         run: |
-          tag="${GITHUB_REF_NAME}"; [ "${GITHUB_REF_TYPE}" = "tag" ] || tag="dev"
+          tag="$GITHUB_REF_NAME"; if [ "$GITHUB_REF_TYPE" != "tag" ]; then tag="${TAGIN:-dev}"; fi
           d="$NAME-$tag"; mkdir -p "$d/windows" "$d/macos" "$d/linux"
           cp parts/windows/*.exe "$d/windows/"; cp parts/macos/*.pkg "$d/macos/"
           cp parts/linux-native/* parts/flatpak-*/* "$d/linux/"
@@ -163,8 +169,8 @@ jobs:
           name: release-zip
           path: "*.zip"
       - name: Publish release
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || inputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" "$ZIP" --prerelease --title "$PRODUCT $TAG (test build)" --notes "Test build, not tuned by ear yet. Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
+          gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" --prerelease --title "$PRODUCT $TAG (test build)" --notes "Test build, not tuned by ear yet. Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
