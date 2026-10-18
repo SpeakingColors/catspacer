@@ -5,8 +5,8 @@
 // Small drawing helpers shared by every cat FX: axes with real units and level meters with dB scales.
 namespace catfx::viz
 {
-inline juce::Colour bg()    { return juce::Colour(0xff0e1213); }
-inline juce::Colour grid()  { return juce::Colour(0xff263230); }
+inline juce::Colour bg()    { return juce::Colour(0xff06080a); }
+inline juce::Colour grid()  { return juce::Colour(0xff1b2523); }
 inline juce::Colour dim()   { return catui::Colours::dim(); }
 inline juce::Colour accent(){ return catui::Colours::accent(); }
 inline juce::Colour green() { return catui::SodaPop::mint(); }
