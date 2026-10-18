@@ -1,0 +1,28 @@
+Cat Spacer install and use (works fully offline)
+==============================================
+
+Windows
+  Run windows\CatSpacer-Setup.exe. It installs the VST3 plugin for all users and a standalone app.
+  Windows may show a blue "unknown publisher" screen because the installer is not signed:
+  click "More info", then "Run anyway".
+  Uninstall: Settings > Apps > Cat Spacer.
+
+macOS
+  Open macos\CatSpacer-macOS.pkg. It installs the VST3 plugin and the standalone app.
+  The installer is not notarized: if macOS blocks it, open System Settings > Privacy & Security and choose "Open Anyway".
+  Uninstall: delete "Cat Spacer.vst3" from /Library/Audio/Plug-Ins/VST3 and the app from /Applications.
+
+Linux, DAW installed as a Flatpak (for example Bitwig, Reaper or Ardour from Flathub)
+  1. Find your DAW's runtime branch:  flatpak info <DAW id>   (look at the Runtime line, e.g. org.freedesktop.Platform/x86_64/24.08)
+  2. Install the matching file from the linux folder:
+       flatpak install --user linux/CatSpacer-flatpak-24.08.flatpak
+     (use the 23.08 file if the runtime is 23.08)
+  3. Restart the DAW and rescan plugins.
+
+Linux, DAW installed natively
+  Extract linux/CatSpacer-linux-vst3.tar.gz into ~/.vst3  (create the folder if needed), then rescan plugins.
+  Uninstall: delete "Cat Spacer.vst3" from ~/.vst3.
+
+Manual: CatSpacer-manual.pdf (every control plus recommendations).
+Checksums: SHA256SUMS.
+Licence: AGPL-3.0-or-later (see LICENSE). Free to use, copy and change.

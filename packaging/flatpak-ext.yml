@@ -1,0 +1,25 @@
+# Flatpak extension: puts the VST3 where Flatpak DAWs (Bitwig, Reaper, Ardour, ...) look for plugins
+# (org.freedesktop.LinuxAudio.Plugins). Built from source inside the SDK. @RUNTIME@ must match the DAW's runtime branch.
+id: org.freedesktop.LinuxAudio.Plugins.CatSpacer
+branch: '@RUNTIME@'
+runtime: org.freedesktop.Platform
+runtime-version: '@RUNTIME@'
+sdk: org.freedesktop.Sdk
+build-extension: true
+separate-locales: false
+appstream-compose: false
+build-options:
+  prefix: /app/extensions/Plugins/CatSpacer
+modules:
+  - name: CatSpacer
+    buildsystem: simple
+    build-options:
+      build-args: [--share=network]     # JUCE and cat-ui are fetched at build time by CMake
+    build-commands:
+      - cmake -S . -B _b -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - cmake --build _b --parallel 2
+      - mkdir -p /app/extensions/Plugins/CatSpacer/vst3
+      - cp -r "$(find _b -type d -name '*.vst3' | head -1)" /app/extensions/Plugins/CatSpacer/vst3/
+    sources:
+      - type: dir
+        path: .

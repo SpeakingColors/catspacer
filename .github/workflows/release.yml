@@ -1,0 +1,159 @@
+# Release build: Windows installer (.exe), macOS installer (.pkg), Linux Flatpak extensions (for Flatpak DAWs) and a
+# plain .vst3 tarball, plus the PDF manual, all in one zip on the GitHub release. Run by pushing a tag like v0.1.0,
+# or by hand (workflow_dispatch) to get the same zip as a build artifact without publishing.
+name: release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  NAME: CatSpacer
+  PRODUCT: "Cat Spacer"
+  CPP: src/ducker/CatDucker.cpp
+jobs:
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install reportlab
+      - run: python3 tools/make_manual.py "$CPP" docs/manual.txt "$NAME-manual.pdf"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manual
+          path: "*.pdf"
+
+  windows:
+    needs: manual
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: manual
+          path: "manual"
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --parallel 4
+      - name: Stage files
+        run: |
+          mkdir -p stage/vst3
+          v=$(find build -type d -name "*.vst3" | head -1); echo "VST3: $v"
+          cp -r "$v"/. "stage/vst3/"
+          exe=$(find build -name "*.exe" -path "*Standalone*" | head -1); echo "EXE: $exe"
+          cp "$exe" "stage/$PRODUCT.exe"
+          cp manual/*.pdf "stage/$NAME-manual.pdf"
+      - name: Installer (Inno Setup)
+        run: |
+          ver="${GITHUB_REF_NAME#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          iscc="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          [ -f "$iscc" ] || { choco install innosetup -y --no-progress; }
+          "$iscc" "//DName=$NAME" "//DProduct=$PRODUCT" "//DVersion=$ver" packaging/windows.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: "Output/*.exe"
+
+  macos:
+    needs: manual
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: manual
+          path: "manual"
+      - name: Build (universal)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          cmake --build build --config Release --parallel 4
+      - name: Installer (.pkg)
+        run: |
+          ver="${GITHUB_REF_NAME#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          id="io.github.speakingcolors.$(echo "$NAME" | tr 'A-Z' 'a-z')"
+          v=$(find build -type d -name "*.vst3" | head -1); a=$(find build -type d -name "*.app" | head -1)
+          echo "VST3: $v  APP: $a"
+          mkdir -p root/vst3 root/app root/doc
+          cp -R "$v" root/vst3/; cp -R "$a" root/app/; cp manual/*.pdf "root/doc/$NAME-manual.pdf"
+          codesign --force --deep -s - "root/vst3/$(basename "$v")"; codesign --force --deep -s - "root/app/$(basename "$a")"
+          pkgbuild --root root/vst3 --identifier "$id.vst3" --version "$ver" --install-location "/Library/Audio/Plug-Ins/VST3" vst3.pkg
+          pkgbuild --root root/app --identifier "$id.app" --version "$ver" --install-location "/Applications" app.pkg
+          pkgbuild --root root/doc --identifier "$id.doc" --version "$ver" --install-location "/Library/Application Support/SpeakingColors/$PRODUCT" doc.pkg
+          productbuild --package vst3.pkg --package app.pkg --package doc.pkg "$NAME-macOS.pkg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: "*.pkg"
+
+  linux-native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libxrandr-dev libxcursor-dev libxcomposite-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 4
+          v=$(find build -type d -name "*.vst3" | head -1); echo "VST3: $v"
+          mkdir -p out && tar -C "$(dirname "$v")" -czf "out/$NAME-linux-vst3.tar.gz" "$(basename "$v")"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-native
+          path: "out/*"
+
+  linux-flatpak:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: ['23.08', '24.08']
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update && sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          sed -e "s/@RUNTIME@/${{ matrix.runtime }}/g" packaging/flatpak-ext.yml > ext.yml
+          flatpak-builder --user --force-clean --install-deps-from=flathub --repo=repo build-dir ext.yml
+          echo "--- files in the extension:"; find build-dir/files -name "*.vst3" -maxdepth 6 | head
+          n=$(find build-dir/files -name "*.vst3" | wc -l); [ "$n" -gt 0 ] || { echo "::error::no .vst3 in the extension"; exit 1; }
+          mkdir -p out
+          flatpak build-bundle --runtime repo "out/$NAME-flatpak-${{ matrix.runtime }}.flatpak" "org.freedesktop.LinuxAudio.Plugins.$NAME" "${{ matrix.runtime }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-${{ matrix.runtime }}
+          path: "out/*"
+
+  package:
+    needs: [manual, windows, macos, linux-native, linux-flatpak]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: parts }
+      - name: Assemble the zip
+        run: |
+          tag="${GITHUB_REF_NAME}"; [ "${GITHUB_REF_TYPE}" = "tag" ] || tag="dev"
+          d="$NAME-$tag"; mkdir -p "$d/windows" "$d/macos" "$d/linux"
+          cp parts/windows/*.exe "$d/windows/"; cp parts/macos/*.pkg "$d/macos/"
+          cp parts/linux-native/* parts/flatpak-*/* "$d/linux/"
+          cp parts/manual/*.pdf "$d/"; cp LICENSE "$d/"
+          sed -e "s/Cat Spacer/$PRODUCT/g" -e "s/CatSpacer/$NAME/g" packaging/INSTALL.txt > "$d/INSTALL.txt"
+          (cd "$d" && find . -type f ! -name SHA256SUMS | sort | xargs sha256sum > SHA256SUMS)
+          zip -r "$d.zip" "$d"
+          ls -l "$d.zip"
+          echo "TAG=$tag" >> "$GITHUB_ENV"; echo "ZIP=$d.zip" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-zip
+          path: "*.zip"
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "$ZIP" --title "$PRODUCT $TAG" --notes "Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
