@@ -96,8 +96,17 @@ void FxEditor::paint(juce::Graphics& g)
 {
     g.fillAll(catui::Colours::panel());
     g.setColour(catui::Colours::accent()); g.setFont(juce::FontOptions(20.f, juce::Font::bold));
-    catui::drawCatHead(g, juce::Rectangle<float>(10.f, 4.f, 34.f, 32.f), catui::SodaPop::mint());
-    g.drawText(proc.getName(), 50, 8, 260, 26, juce::Justification::left);
+    {   // cat head tile, one soda pop colour per plugin (same idea as assets/icon.svg)
+        const auto nm = proc.getName();
+        const auto face = nm.containsIgnoreCase("Crusher") ? catui::SodaPop::hotPink() : nm.containsIgnoreCase("Fat") ? catui::SodaPop::amber()
+                        : nm.containsIgnoreCase("Spacer") ? catui::SodaPop::mint() : nm.containsIgnoreCase("bass") ? catui::SodaPop::orchid()
+                        : catui::SodaPop::popSky();
+        auto tile = juce::Rectangle<float>(10.f, 3.f, 38.f, 38.f);
+        g.setColour(juce::Colour(0xff0b0c0f)); g.fillRoundedRectangle(tile, 8.f);
+        g.setColour(face.withAlpha(0.5f)); g.drawRoundedRectangle(tile, 8.f, 1.2f);
+        catui::drawCatHead(g, tile.reduced(4.f), face);
+    }
+    g.drawText(proc.getName(), 56, 8, 260, 26, juce::Justification::left);
     if (panelMode)
     {
         g.setFont(juce::FontOptions(11.f, juce::Font::bold));
