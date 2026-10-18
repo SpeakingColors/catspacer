@@ -58,7 +58,7 @@ private:
     };
     struct C
     {
-        juce::ComboBox box; juce::ToggleButton tog; juce::Label l; juce::String tip; bool isToggle = false;
+        juce::ComboBox box; juce::ToggleButton tog; juce::Label l; juce::String tip; bool isToggle = false, isLimiter = false;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> a;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> b;
     };

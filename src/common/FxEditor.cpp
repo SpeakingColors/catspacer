@@ -22,6 +22,7 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
         auto c = std::make_unique<C>();
         c->tip = spec.tip;
         c->isToggle = spec.items.size() == 2 && spec.items[0] == "Off";
+        c->isLimiter = spec.id == "safelim";
         c->l.setText(spec.name, juce::dontSendNotification);
         c->l.setFont(juce::FontOptions(12.f));
         if (c->isToggle)
@@ -120,10 +121,11 @@ void FxEditor::resized()
     auto top = r.removeFromTop(30);
     tipsBtn.setBounds(top.removeFromRight(56)); top.removeFromRight(6);
     randBtn.setBounds(top.removeFromRight(90)); top.removeFromRight(8);
+    for (auto& c : combos) if (c->isLimiter) { c->tog.setBounds(top.removeFromRight(84)); top.removeFromRight(8); }
     if (!panelMode)
     {
         for (auto it = combos.rbegin(); it != combos.rend(); ++it)
-        { auto& c = **it; auto slot = top.removeFromRight(c.isToggle ? 90 : 130); if (c.isToggle) c.tog.setBounds(slot); else { c.box.setBounds(slot); c.l.setBounds(top.removeFromRight(90)); } top.removeFromRight(10); }
+        { auto& c = **it; if (c.isLimiter) continue; auto slot = top.removeFromRight(c.isToggle ? 90 : 130); if (c.isToggle) c.tog.setBounds(slot); else { c.box.setBounds(slot); c.l.setBounds(top.removeFromRight(90)); } top.removeFromRight(10); }
     }
     {
         auto tl = top.withTrimmedLeft(200);
@@ -169,7 +171,7 @@ void FxEditor::resized()
         }
         // controls that no panel uses stay hidden
         for (auto& k : knobs) { bool used = false; for (auto& pn : panels) for (auto* q : pn.ks) used |= q == k.get(); k->s.setVisible(used); k->l.setVisible(used); }
-        for (auto& c : combos) { bool used = false; for (auto& pn : panels) for (auto* q : pn.cs) used |= q == c.get(); c->box.setVisible(used && !c->isToggle); c->tog.setVisible(used && c->isToggle); c->l.setVisible(used && !c->isToggle); }
+        for (auto& c : combos) { bool used = false; for (auto& pn : panels) for (auto* q : pn.cs) used |= q == c.get(); c->box.setVisible(used && !c->isToggle); c->tog.setVisible((used || c->isLimiter) && c->isToggle); c->l.setVisible(used && !c->isToggle); }
         return;
     }
     viz.setBounds(r.removeFromTop(220));

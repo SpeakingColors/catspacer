@@ -25,16 +25,16 @@ public:
                  { "Wide Glue", { { "amount", 35.f }, { "mode", 1.f }, { "release", 300.f } } } };
     }
 private:
-    static int sizeFor(int idx) { return idx == 0 ? 512 : idx == 1 ? 1024 : 2048; }
+    static int sizeFor(int idx) { return idx == 0 ? 256 : idx == 1 ? 512 : idx == 2 ? 1024 : 2048; }
     void parameterChanged(const juce::String&, float v) override { wantIdx = (int) v; setLatencySamples(sizeFor((int) v)); }
     void switchSize(int idx);
     void frame(int ch);
 
     struct Chan { std::vector<float> in, out; int pos = 0; };
-    juce::dsp::FFT fftA { 11 }, fft512 { 9 }, fft1024 { 10 }, fft2048 { 11 };
-    juce::dsp::FFT* fm[3] { &fft512, &fft1024, &fft2048 };
-    std::vector<float> winA, winM[3];
-    float scaleM[3] { 1.f, 1.f, 1.f };
+    juce::dsp::FFT fftA { 11 }, fft256 { 8 }, fft512 { 9 }, fft1024 { 10 }, fft2048 { 11 };
+    juce::dsp::FFT* fm[4] { &fft256, &fft512, &fft1024, &fft2048 };
+    std::vector<float> winA, winM[4];
+    float scaleM[4] { 1.f, 1.f, 1.f, 1.f };
     Chan main[2];
     std::vector<float> sideIn; int sidePos = 0;
     std::vector<std::complex<float>> tbuf, fbuf, sbuf;
@@ -42,10 +42,10 @@ private:
     juce::dsp::StateVariableTPTFilter<float> audHp, audLp;
     float gainDb[kBands] {}, bandHz[kBands] {}, frozenDb[kBands] {}, refS = -100.f;
     int binBandA[kA / 2 + 1] {};
-    int binBandM[3][kMaxM / 2 + 1] {}, interpB[3][kMaxM / 2 + 1] {};
-    float interpT[3][kMaxM / 2 + 1] {};
+    int binBandM[4][kMaxM / 2 + 1] {}, interpB[4][kMaxM / 2 + 1] {};
+    float interpT[4][kMaxM / 2 + 1] {};
     std::atomic<int> wantIdx { 1 };
-    int curIdx = 1, M = 1024, counter = 0;
+    int curIdx = 1, M = 512, counter = 0;
     float tmpOut[2] { 0.f, 0.f };
     // for the display
     std::atomic<float> vMain[kBands], vSide[kBands], vCut[kBands];

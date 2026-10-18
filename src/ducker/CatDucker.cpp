@@ -17,7 +17,7 @@ CatDucker::CatDucker()
         { { "mode", "Stereo mode", { "L/R", "M/S" }, 0, "Stereo mode: L/R ducks left and right, M/S ducks mid and side." },
           { "freeze", "Freeze", { "Off", "On" }, 0, "Freeze: holds the current sidechain curve so it keeps carving the same gaps (a static EQ taken from the sidechain)." },
           { "audition", "Audition", { "Off", "On" }, 0, "Audition: listen to the sidechain as the plugin hears it (after low and high cut). Useful for setting the cuts." },
-          { "latency", "Latency", { "Low 512", "Normal 1024", "High 2048" }, 1, "Latency: the delay this plugin adds (host compensates). Low reacts fastest but has a rougher low end, High is the cleanest." } }, true)
+          { "latency", "Latency", { "Ultra 256", "Low 512", "Normal 1024", "High 2048" }, 1, "Latency: the delay this plugin adds (the host compensates). Ultra 256 is about 6 ms, Low 512 about 11 ms, Normal 1024 about 21 ms, High 2048 about 43 ms. Shorter = tighter timing but less precise at low frequencies; longer = cleaner and more exact in the bass." } }, true)
 {
     for (int i = 0; i < kBands; ++i) { vMain[i] = vSide[i] = -100.f; vCut[i] = 0.f; }
     apvts.addParameterListener("latency", this);
@@ -36,7 +36,7 @@ void CatDucker::prepare(double sr, int bs)
     winA.resize((size_t) kA);
     for (int i = 0; i < kA; ++i) winA[(size_t) i] = 0.5f - 0.5f * std::cos(2.f * pi * (float) i / (float) kA);
     tbuf.assign((size_t) kA, {}); fbuf.assign((size_t) kA, {}); sbuf.assign((size_t) kA, {});
-    for (int s = 0; s < 3; ++s)
+    for (int s = 0; s < 4; ++s)
     {
         const int N = sizeFor(s);
         winM[s].resize((size_t) N);
@@ -51,7 +51,7 @@ void CatDucker::prepare(double sr, int bs)
     for (int b = 0; b < kBands; ++b) bandHz[b] = 30.f * std::pow(20000.f / 30.f, (float) b / (float) (kBands - 1));
     auto nearestBand = [&](float hz) { int best = 0; float bd = 1e9f; for (int b = 0; b < kBands; ++b) { const float d = std::abs(std::log(std::max(hz, 1.f) / bandHz[b])); if (d < bd) { bd = d; best = b; } } return best; };
     for (int k = 0; k <= kA / 2; ++k) binBandA[k] = nearestBand((float) k * (float) sr / (float) kA);
-    for (int s = 0; s < 3; ++s)
+    for (int s = 0; s < 4; ++s)
     {
         const int N = sizeFor(s);
         for (int k = 0; k <= N / 2; ++k)
@@ -66,7 +66,7 @@ void CatDucker::prepare(double sr, int bs)
     for (auto& g : gainDb) g = 0.f;
     for (auto& f : frozenDb) f = -100.f;
     refS = -100.f;
-    const int idx = juce::jlimit(0, 2, (int) get("latency"));
+    const int idx = juce::jlimit(0, 3, (int) get("latency"));
     wantIdx = idx; switchSize(idx);
     setLatencySamples(sizeFor(idx));
     audBuf.assign((size_t) std::max(bs, 1), 0.f);
@@ -137,7 +137,7 @@ void CatDucker::frame(int ch)
 
 void CatDucker::process(juce::AudioBuffer<float>& buf, const juce::AudioBuffer<float>* sc)
 {
-    if (wantIdx.load() != curIdx) switchSize(juce::jlimit(0, 2, wantIdx.load()));
+    if (wantIdx.load() != curIdx) switchSize(juce::jlimit(0, 3, wantIdx.load()));
     const int n = buf.getNumSamples(), nch = juce::jmin(2, buf.getNumChannels());
     hasSc = sc != nullptr;
     const float mix = get("mix") / 100.f;

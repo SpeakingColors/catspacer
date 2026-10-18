@@ -25,9 +25,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout FxBase::makeLayout(const std
     return { p.begin(), p.end() };
 }
 
-FxBase::FxBase(const juce::String& name, std::vector<KnobSpec> k, std::vector<ChoiceSpec> c, bool sc)
-    : AudioProcessor(makeBuses(sc)), knobSpecs(k), choiceSpecs(c),
-      apvts(*this, nullptr, "STATE", makeLayout(k, c)), hasSidechain(sc), pluginName(name) {}
+static std::vector<ChoiceSpec> withLimiter(std::vector<ChoiceSpec> c)
+{
+    c.push_back({ "safelim", "Limiter", { "Off", "On" }, 1, "Safety limiter on the output: keeps the level from ever passing 0 dBFS, smooth and transparent. Turn it off if you want the raw output (for example to let your own limiter do the work)." });
+    return c;
+}
+
+FxBase::FxBase(const juce::String& name, std::vector<KnobSpec> k, std::vector<ChoiceSpec> c0, bool sc)
+    : AudioProcessor(makeBuses(sc)), knobSpecs(k), choiceSpecs(withLimiter(c0)),
+      apvts(*this, nullptr, "STATE", makeLayout(k, withLimiter(c0))), hasSidechain(sc), pluginName(name) {}
 
 bool FxBase::isBusesLayoutSupported(const BusesLayout& l) const
 {
@@ -73,7 +79,7 @@ void FxBase::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
         process(main, &sc);
     }
     else process(main, nullptr);
-    safetyLimit(main);
+    if (get("safelim") > 0.5f) safetyLimit(main); else limGain = 1.f;
     outLevel = std::max(main.getMagnitude(0, main.getNumSamples()), outLevel.load() * decay);
 }
 
@@ -100,6 +106,6 @@ void FxBase::randomize()
     const auto skip = randomExclude();
     for (auto* p : getParameters())
         if (auto* r = dynamic_cast<juce::RangedAudioParameter*>(p))
-            if (!skip.contains(r->paramID))
+            if (!skip.contains(r->paramID) && r->paramID != "safelim")
                 r->setValueNotifyingHost(rnd.nextFloat());
 }
