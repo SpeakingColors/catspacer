@@ -2,9 +2,9 @@
 # (org.freedesktop.LinuxAudio.Plugins). Built from source inside the SDK. @RUNTIME@ must match the DAW's runtime branch.
 id: org.freedesktop.LinuxAudio.Plugins.CatSpacer
 branch: '@RUNTIME@'
-runtime: org.freedesktop.Platform
-runtime-version: '@RUNTIME@'
-sdk: org.freedesktop.Sdk
+runtime: org.freedesktop.LinuxAudio.BaseExtension    # defines the Plugins extension point
+runtime-version: '@BASEV@'
+sdk: org.freedesktop.Sdk//@RUNTIME@
 build-extension: true
 separate-locales: false
 appstream-compose: false

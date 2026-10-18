@@ -13,10 +13,10 @@ macOS
   Uninstall: delete "Cat Spacer.vst3" from /Library/Audio/Plug-Ins/VST3 and the app from /Applications.
 
 Linux, DAW installed as a Flatpak (for example Bitwig, Reaper or Ardour from Flathub)
-  1. Find your DAW's runtime branch:  flatpak info <DAW id>   (look at the Runtime line, e.g. org.freedesktop.Platform/x86_64/24.08)
-  2. Install the matching file from the linux folder:
-       flatpak install --user linux/CatSpacer-flatpak-24.08.flatpak
-     (use the 23.08 file if the runtime is 23.08)
+  1. Your DAW should use the org.freedesktop.Platform 25.08 runtime (check with: flatpak info <DAW id>, Runtime line).
+  2. Install the file from the linux folder:
+       flatpak install --user linux/CatSpacer-flatpak-25.08.flatpak
+     (older runtimes are end-of-life and have no matching plugin extension base on Flathub; use the plain .vst3 below instead)
   3. Restart the DAW and rescan plugins.
 
 Linux, DAW installed natively

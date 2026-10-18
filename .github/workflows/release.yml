@@ -111,18 +111,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runtime: ['23.08', '24.08']
+        runtime: ['25.08']
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: Build the extension
+        shell: bash
+        run: |
+          set -o pipefail
+          (
+          set -ex
           sudo apt-get update && sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          sed -e "s/@RUNTIME@/${{ matrix.runtime }}/g" packaging/flatpak-ext.yml > ext.yml
+          basev="${{ matrix.runtime }}"; [ "$basev" = "25.08" ] && basev=stable
+          sed -e "s/@RUNTIME@/${{ matrix.runtime }}/g" -e "s/@BASEV@/$basev/g" packaging/flatpak-ext.yml > ext.yml
           flatpak-builder --user --force-clean --install-deps-from=flathub --repo=repo build-dir ext.yml
           echo "--- files in the extension:"; find build-dir/files -name "*.vst3" -maxdepth 6 | head
-          n=$(find build-dir/files -name "*.vst3" | wc -l); [ "$n" -gt 0 ] || { echo "::error::no .vst3 in the extension"; exit 1; }
+          n=$(find build-dir/files -name "*.vst3" | wc -l); [ "$n" -gt 0 ] || { echo "no .vst3 in the extension"; find build-dir/files | head -40; exit 1; }
           mkdir -p out
           flatpak build-bundle --runtime repo "out/$NAME-flatpak-${{ matrix.runtime }}.flatpak" "org.freedesktop.LinuxAudio.Plugins.$NAME" "${{ matrix.runtime }}"
+          ) 2>&1 | tee flatpak.log
+      - name: Show errors
+        if: failure()
+        shell: bash
+        run: (grep -iE "error|fail|cannot|no such" flatpak.log | grep -v "end-of-life" | tail -n 5; tail -n 5 flatpak.log) | while IFS= read -r l; do echo "::error::${l:0:300}"; done
       - uses: actions/upload-artifact@v4
         with:
           name: flatpak-${{ matrix.runtime }}
