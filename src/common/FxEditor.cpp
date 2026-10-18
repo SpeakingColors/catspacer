@@ -139,7 +139,7 @@ void FxEditor::resized()
         {
             const int w = (int) std::round(usable * pn.weight / total);
             auto col = juce::Rectangle<int>(x, r.getY(), w, r.getHeight());
-            const int toggleRows = (int) pn.cs.size();
+            int toggleRows = 0; for (size_t i = 0; i < pn.cs.size(); ++i) { ++toggleRows; if (pn.cs[i]->isToggle && i + 1 < pn.cs.size() && !pn.cs[i + 1]->isToggle) ++i; }
             auto ctrl = col.removeFromBottom(92 + toggleRows * 28);
             pn.view->setBounds(col.withTrimmedBottom(22));
             auto krow = ctrl.removeFromTop(92);
@@ -153,10 +153,16 @@ void FxEditor::resized()
                     pn.ks[i]->s.setBounds(c);
                 }
             }
-            for (auto* c : pn.cs)
+            for (size_t i = 0; i < pn.cs.size(); ++i)
             {
+                auto* c = pn.cs[i];
                 auto row = ctrl.removeFromTop(28).reduced(0, 2);
-                if (c->isToggle) c->tog.setBounds(row); else { c->l.setBounds(row.removeFromLeft(70)); c->box.setBounds(row); }
+                if (c->isToggle && i + 1 < pn.cs.size() && !pn.cs[i + 1]->isToggle)   // switch on the left, menu on the right
+                {
+                    c->tog.setBounds(row.removeFromLeft(64)); row.removeFromLeft(6);
+                    auto* d = pn.cs[++i]; d->box.setBounds(row); d->l.setBounds({});
+                }
+                else if (c->isToggle) c->tog.setBounds(row); else { c->l.setBounds(row.removeFromLeft(70)); c->box.setBounds(row); }
             }
             x += w + gap;
         }
