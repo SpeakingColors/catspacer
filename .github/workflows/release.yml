@@ -167,4 +167,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" "$ZIP" --title "$PRODUCT $TAG" --notes "Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
+          gh release create "$TAG" "$ZIP" --prerelease --title "$PRODUCT $TAG (test build)" --notes "Test build, not tuned by ear yet. Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
