@@ -28,20 +28,20 @@
 -- Exporting juceaide
 -- Testing juceaide
 -- Finished setting up juceaide
--- Configuring done (89.8s)
+-- Configuring done (77.6s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/catspacer/catspacer/build
 [  1%] Building VST3 manifest helper for CatSpacer
-[  3%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/src/CatLookAndFeel.cpp.o
 [  4%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/src/CatFrame.cpp.o
 [  6%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/__/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+[  6%] Building CXX object _deps/cat_ui-build/CMakeFiles/cat_ui.dir/src/CatLookAndFeel.cpp.o
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
 -- Detecting CXX compiler ABI info - done
 -- Check for working CXX compiler: /usr/bin/c++ - skipped
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
--- Configuring done (0.2s)
+-- Configuring done (0.3s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/catspacer/catspacer/build/vst3_helpers/CatSpacer
 gmake[3]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
@@ -64,16 +64,18 @@ gmake[3]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rul
 [ 26%] Built target cat_ui
 [ 27%] Building CXX object CMakeFiles/CatSpacer.dir/src/common/FxBase.cpp.o
 [ 29%] Building CXX object CMakeFiles/CatSpacer.dir/src/common/FxEditor.cpp.o
-[ 31%] Building CXX object CMakeFiles/CatSpacer.dir/src/ducker/CatDucker.cpp.o
-[ 32%] Building CXX object CMakeFiles/CatSpacer.dir/src/Plugins.cpp.o
+[ 31%] Building CXX object CMakeFiles/CatSpacer.dir/src/Plugins.cpp.o
+[ 32%] Building CXX object CMakeFiles/CatSpacer.dir/src/ducker/CatDucker.cpp.o
 In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
                  from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
                  from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
-                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.h:2,
-                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.cpp:1:
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.cpp:1:
 /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
   292 |     virtual void processBlock (AudioBuffer<double>& buffer,
       |                  ^~~~~~~~~~~~
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:41:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   41 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
 In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
                  from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
                  from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
@@ -82,12 +84,15 @@ In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src
 /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
   292 |     virtual void processBlock (AudioBuffer<double>& buffer,
       |                  ^~~~~~~~~~~~
-/home/runner/work/catspacer/catspacer/src/common/FxBase.h:34:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
-   34 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:41:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   41 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
       |          ^~~~~~~~~~~~
-/home/runner/work/catspacer/catspacer/src/common/FxBase.h:34:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
-   34 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-      |          ^~~~~~~~~~~~
+In file included from /home/runner/work/catspacer/catspacer/src/common/FxEditor.h:3,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.cpp:2:
+/home/runner/work/catspacer/catspacer/src/common/Viz.h: In function ‘void catfx::viz::grMeter(juce::Graphics&, juce::Rectangle<float>, float, float)’:
+/home/runner/work/catspacer/catspacer/src/common/Viz.h:89:45: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |         g.setColour(dim()); g.drawText(tick == 0.f ? "0" : "-" + juce::String((int) tick), (int) track.getRight() + 4, (int) y - 5, 24, 10, juce::Justification::left);
+      |                                        ~~~~~^~~~~~
 In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
                  from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
                  from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
@@ -95,62 +100,114 @@ In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src
 /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
   292 |     virtual void processBlock (AudioBuffer<double>& buffer,
       |                  ^~~~~~~~~~~~
-/home/runner/work/catspacer/catspacer/src/common/FxBase.h:34:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
-   34 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:41:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   41 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
       |          ^~~~~~~~~~~~
 In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.h:145,
                  from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:64,
                  from /home/runner/work/catspacer/catspacer/src/common/FxBase.h:2,
-                 from /home/runner/work/catspacer/catspacer/src/common/FxBase.cpp:1:
+                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.h:2,
+                 from /home/runner/work/catspacer/catspacer/src/common/FxEditor.cpp:1:
 /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors_headless/processors/juce_AudioProcessor.h:292:18: warning: ‘virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)’ was hidden [-Woverloaded-virtual=]
   292 |     virtual void processBlock (AudioBuffer<double>& buffer,
       |                  ^~~~~~~~~~~~
-/home/runner/work/catspacer/catspacer/src/common/FxBase.h:34:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
-   34 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+/home/runner/work/catspacer/catspacer/src/common/FxBase.h:41:10: note:   by ‘virtual void catfx::FxBase::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’
+   41 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
       |          ^~~~~~~~~~~~
+In file included from /home/runner/work/catspacer/catspacer/src/common/FxEditor.h:3:
+/home/runner/work/catspacer/catspacer/src/common/Viz.h: In function ‘void catfx::viz::grMeter(juce::Graphics&, juce::Rectangle<float>, float, float)’:
+/home/runner/work/catspacer/catspacer/src/common/Viz.h:89:45: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |         g.setColour(dim()); g.drawText(tick == 0.f ? "0" : "-" + juce::String((int) tick), (int) track.getRight() + 4, (int) y - 5, 24, 10, juce::Justification::left);
+      |                                        ~~~~~^~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp: In member function ‘virtual void CatDucker::paintPanel(int, juce::Graphics&, juce::Rectangle<float>)’:
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:188:28: error: ‘viz’ is not a namespace-name
+  188 |     using namespace catfx::viz;
+      |                            ^~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:195:21: error: ‘bg’ was not declared in this scope; did you mean ‘g’?
+  195 |         g.setColour(bg().brighter(0.04f)); g.fillRect(p);
+      |                     ^~
+      |                     g
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:196:9: error: ‘freqAxis’ was not declared in this scope
+  196 |         freqAxis(g, p, 30.f, 20000.f);
+      |         ^~~~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:202:27: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  202 |             g.setColour(v == 0.f ? dim().withAlpha(0.8f) : grid()); g.drawHorizontalLine((int) y, p.getX(), p.getRight());
+      |                         ~~^~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:202:36: error: ‘dim’ was not declared in this scope; did you mean ‘fdim’?
+  202 |             g.setColour(v == 0.f ? dim().withAlpha(0.8f) : grid()); g.drawHorizontalLine((int) y, p.getX(), p.getRight());
+      |                                    ^~~
+      |                                    fdim
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:202:60: error: ‘grid’ was not declared in this scope
+  202 |             g.setColour(v == 0.f ? dim().withAlpha(0.8f) : grid()); g.drawHorizontalLine((int) y, p.getX(), p.getRight());
+      |                                                            ^~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:203:27: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  203 |             g.setColour(v == 0.f ? juce::Colours::white : dim()); g.drawText(v == 0.f ? "0" : "-" + juce::String((int) v), (int) p.getX() - 30, (int) y - 6, 27, 12, juce::Justification::right);
+      |                         ~~^~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:203:80: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  203 |             g.setColour(v == 0.f ? juce::Colours::white : dim()); g.drawText(v == 0.f ? "0" : "-" + juce::String((int) v), (int) p.getX() - 30, (int) y - 6, 27, 12, juce::Justification::right);
+      |                                                                              ~~^~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:205:21: error: ‘dim’ was not declared in this scope; did you mean ‘fdim’?
+  205 |         g.setColour(dim()); g.drawText("cut dB", (int) p.getX() - 34, (int) p.getY() - 14, 40, 11, juce::Justification::left);
+      |                     ^~~
+      |                     fdim
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:212:21: error: ‘blue’ was not declared in this scope; did you mean ‘juce::Colours::blue’?
+  212 |         g.setColour(blue()); g.strokePath(spec([&](int b) { return vSide[b].load(); }), juce::PathStrokeType(2.f));
+      |                     ^~~~
+      |                     juce::Colours::blue
+In file included from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:125,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.h:68,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.h:68,
+                 from /home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:65:
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_graphics/colour/juce_Colours.h:57:18: note: ‘juce::Colours::blue’ declared here
+   57 |     const Colour blue                 { 0xff0000ff };
+      |                  ^~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:216:69: error: ‘freqToX’ was not declared in this scope
+  216 |         for (float hz : { get("lo"), get("hi") }) { const float x = freqToX(hz, p, 30.f, 20000.f); g.setColour(accent().withAlpha(0.7f)); g.drawVerticalLine((int) x, p.getY(), p.getBottom()); }
+      |                                                                     ^~~~~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:216:112: error: ‘accent’ was not declared in this scope; did you mean ‘acct’?
+  216 |         for (float hz : { get("lo"), get("hi") }) { const float x = freqToX(hz, p, 30.f, 20000.f); g.setColour(accent().withAlpha(0.7f)); g.drawVerticalLine((int) x, p.getY(), p.getBottom()); }
+      |                                                                                                                ^~~~~~
+      |                                                                                                                acct
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:224:21: error: ‘bg’ was not declared in this scope; did you mean ‘g’?
+  224 |         g.setColour(bg().brighter(0.04f)); g.fillRect(p);
+      |                     ^~
+      |                     g
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:235:21: error: ‘dim’ was not declared in this scope; did you mean ‘fdim’?
+  235 |         g.setColour(dim()); g.drawText("cut depth over time", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+      |                     ^~~
+      |                     fdim
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:244:21: error: ‘dim’ was not declared in this scope; did you mean ‘fdim’?
+  244 |         g.setColour(dim()); g.drawText("effect amount per channel", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
+      |                     ^~~
+      |                     fdim
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp: In lambda function:
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:246:23: error: ‘grid’ was not declared in this scope
+  246 |         { g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v)); g.setColour(juce::Colours::white); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", b.toNearestInt(), juce::Justification::centred); };
+      |                       ^~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:246:59: error: ‘accent’ was not declared in this scope; did you mean ‘acct’?
+  246 |         { g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v)); g.setColour(juce::Colours::white); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", b.toNearestInt(), juce::Justification::centred); };
+      |                                                           ^~~~~~
+      |                                                           acct
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp: In member function ‘virtual void CatDucker::paintPanel(int, juce::Graphics&, juce::Rectangle<float>)’:
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:249:21: error: ‘grid’ was not declared in this scope
+  249 |         g.setColour(grid()); g.fillRect(area.removeFromTop(10.f).withTrimmedLeft(0.f));
+      |                     ^~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:251:21: error: ‘blue’ was not declared in this scope; did you mean ‘juce::Colours::blue’?
+  251 |         g.setColour(blue().withAlpha(0.8f)); g.fillRect(m.withWidth(m.getWidth() * (1.f - mix * 0.01f)));
+      |                     ^~~~
+      |                     juce::Colours::blue
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_graphics/colour/juce_Colours.h:57:18: note: ‘juce::Colours::blue’ declared here
+   57 |     const Colour blue                 { 0xff0000ff };
+      |                  ^~~~
+/home/runner/work/catspacer/catspacer/src/ducker/CatDucker.cpp:252:21: error: ‘green’ was not declared in this scope; did you mean ‘juce::Colours::green’?
+  252 |         g.setColour(green()); g.fillRect(m.withTrimmedLeft(m.getWidth() * (1.f - mix * 0.01f)));
+      |                     ^~~~~
+      |                     juce::Colours::green
+/home/runner/work/catspacer/catspacer/build/_deps/juce-src/modules/juce_graphics/colour/juce_Colours.h:99:18: note: ‘juce::Colours::green’ declared here
+   99 |     const Colour green                { 0xff008000 };
+      |                  ^~~~~
 [ 34%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
-[ 36%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
-[ 37%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
-[ 39%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
-[ 40%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
-[ 42%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
-[ 44%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
-[ 45%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
-[ 47%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
-[ 49%] Building C object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
-[ 50%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_events/juce_events.cpp.o
-[ 52%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_core/juce_core.cpp.o
-[ 54%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
-[ 55%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
-[ 57%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.cpp.o
-[ 59%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
-[ 60%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
-[ 62%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
-[ 63%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
-[ 65%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
-[ 67%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
-[ 68%] Building CXX object CMakeFiles/CatSpacer.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
-[ 70%] Linking CXX static library "CatSpacer_artefacts/Release/libCat Spacer_SharedCode.a"
-[ 70%] Built target CatSpacer
-[ 72%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
-[ 75%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
-[ 75%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
-[ 77%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
-[ 80%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
-[ 80%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
-[ 81%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
-[ 85%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
-[ 85%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
-[ 86%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
-[ 88%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
-[ 91%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
-[ 91%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
-[ 93%] Building CXX object CMakeFiles/CatSpacer_Standalone.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
-[ 96%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
-[ 96%] Building CXX object CMakeFiles/CatSpacer_VST3.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
-[ 98%] Linking CXX executable "CatSpacer_artefacts/Release/Standalone/Cat Spacer"
-[ 98%] Built target CatSpacer_Standalone
-[100%] Linking CXX shared module "CatSpacer_artefacts/Release/VST3/Cat Spacer.vst3/Contents/x86_64-linux/Cat Spacer.so"
-removing moduleinfo.json
-creating /home/runner/work/catspacer/catspacer/build/CatSpacer_artefacts/Release/VST3/Cat Spacer.vst3/Contents/Resources/moduleinfo.json
-[100%] Built target CatSpacer_VST3
+gmake[2]: *** [CMakeFiles/CatSpacer.dir/build.make:121: CMakeFiles/CatSpacer.dir/src/ducker/CatDucker.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+gmake[1]: *** [CMakeFiles/Makefile2:201: CMakeFiles/CatSpacer.dir/all] Error 2
+gmake: *** [Makefile:136: all] Error 2
