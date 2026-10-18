@@ -157,6 +157,7 @@ void FxEditor::resized()
             {
                 auto* c = pn.cs[i];
                 auto row = ctrl.removeFromTop(28).reduced(0, 2);
+                if (c->isToggle) row = row.withTrimmedLeft(16);   // switches sit a little in from the wall, same spot in every panel
                 if (c->isToggle && i + 1 < pn.cs.size() && !pn.cs[i + 1]->isToggle)   // switch on the left, menu on the right
                 {
                     c->tog.setBounds(row.removeFromLeft(64)); row.removeFromLeft(6);

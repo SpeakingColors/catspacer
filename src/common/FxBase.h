@@ -63,6 +63,8 @@ public:
 protected:
     double fs = 44100.0;
 private:
+    void safetyLimit(juce::AudioBuffer<float>&);
+    float limGain = 1.f;
     juce::String pluginName;
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout(const std::vector<KnobSpec>&, const std::vector<ChoiceSpec>&);
     static BusesProperties makeBuses(bool sidechain);

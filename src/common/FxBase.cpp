@@ -37,6 +37,29 @@ bool FxBase::isBusesLayoutSupported(const BusesLayout& l) const
     return true;
 }
 
+// Always-on safety limiter so a cat plugin can never push the output past 0 dBFS: a fast gain stage with a slow release
+// (inaudible on normal material) followed by a soft knee ceiling at -0.3 dB that only touches the last few percent of a peak.
+void FxBase::safetyLimit(juce::AudioBuffer<float>& b)
+{
+    const int n = b.getNumSamples(), nch = b.getNumChannels();
+    const float ceil = 0.966f, knee = 0.93f;
+    const float aA = (float) std::exp(-1.0 / (0.0003 * fs)), aR = (float) std::exp(-1.0 / (0.08 * fs));
+    for (int i = 0; i < n; ++i)
+    {
+        float pk = 0.f;
+        for (int c = 0; c < nch; ++c) pk = std::max(pk, std::abs(b.getReadPointer(c)[i]));
+        const float target = pk * limGain > ceil ? ceil / pk : 1.f;
+        limGain = target < limGain ? target + (limGain - target) * aA : 1.f + (limGain - 1.f) * aR;
+        for (int c = 0; c < nch; ++c)
+        {
+            float y = b.getWritePointer(c)[i] * limGain;
+            const float ay = std::abs(y);
+            if (ay > knee) y = std::copysign(knee + (ceil - knee) * std::tanh((ay - knee) / (ceil - knee)), y);
+            b.getWritePointer(c)[i] = y;
+        }
+    }
+}
+
 void FxBase::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals nd;
@@ -50,6 +73,7 @@ void FxBase::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
         process(main, &sc);
     }
     else process(main, nullptr);
+    safetyLimit(main);
     outLevel = std::max(main.getMagnitude(0, main.getNumSamples()), outLevel.load() * decay);
 }
 
