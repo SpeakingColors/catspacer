@@ -137,7 +137,7 @@ void FxEditor::resized()
             auto col = juce::Rectangle<int>(x, r.getY(), w, r.getHeight());
             const int toggleRows = (int) pn.cs.size();
             auto ctrl = col.removeFromBottom(92 + toggleRows * 28);
-            pn.view->setBounds(col.withTrimmedBottom(8));
+            pn.view->setBounds(col.withTrimmedBottom(22));
             auto krow = ctrl.removeFromTop(92);
             if (!pn.ks.empty())
             {

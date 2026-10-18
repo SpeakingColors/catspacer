@@ -220,16 +220,19 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
     }
     else if (idx == 1)  // attack / release shape
     {
-        const float at = get("attack"), rl = get("release"), tot = at * 3.f + rl * 3.f;
+        const float at = get("attack"), rl = get("release");
         auto p = r.withTrimmedLeft(8.f).withTrimmedRight(8.f).withTrimmedTop(16.f).withTrimmedBottom(14.f);
         g.setColour(bg().brighter(0.04f)); g.fillRect(p);
         juce::Path q;
-        const int N = 120;
+        const int N = 240;
+        // attack takes a tiny share of the width when snappy, so the peak hugs the left wall
+        const float wa = 0.012f + 0.33f * std::log(at) / std::log(300.f);
+        const float k = 7.f - 4.f * juce::jlimit(0.f, 1.f, std::log(rl / 10.f) / std::log(200.f));
         for (int i = 0; i <= N; ++i)
         {
-            const float t = tot * (float) i / (float) N;
-            const float v = t < at * 3.f ? 1.f - std::exp(-t / at) : (1.f - std::exp(-3.f)) * std::exp(-(t - at * 3.f) / rl);
-            const float x = p.getX() + (float) i / (float) N * p.getWidth(), y = p.getBottom() - v * p.getHeight() * 0.9f;
+            const float u = (float) i / (float) N;
+            const float v = u < wa ? 1.f - std::exp(-4.f * u / wa) : (1.f - std::exp(-4.f)) * std::exp(-k * (u - wa) / (1.f - wa));
+            const float x = p.getX() + u * p.getWidth(), y = p.getBottom() - v * p.getHeight() * 0.92f;
             i ? q.lineTo(x, y) : q.startNewSubPath(x, y);
         }
         g.setColour(juce::Colours::white); g.strokePath(q, juce::PathStrokeType(2.f));
@@ -241,16 +244,22 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
     {
         const float pan = get("pan") * 0.01f, ls = 1.f - std::max(0.f, pan), rs = 1.f - std::max(0.f, -pan), mix = get("mix");
         const bool ms = get("mode") > 0.5f;
-        auto area = r.reduced(10.f, 12.f);
+        auto area = r.reduced(10.f, 8.f);
         g.setColour(dim()); g.drawText("effect amount per channel", (int) r.getX() + 4, (int) r.getY() + 1, (int) r.getWidth(), 11, juce::Justification::left);
-        auto bar = [&](juce::Rectangle<float> b, float v, const juce::String& n)
-        { g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v)); g.setColour(juce::Colours::white); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", b.toNearestInt(), juce::Justification::centred); };
-        bar(area.removeFromTop(22.f), ls, ms ? "mid" : "L"); area.removeFromTop(8.f);
-        bar(area.removeFromTop(22.f), rs, ms ? "side" : "R"); area.removeFromTop(16.f);
-        g.setColour(grid()); g.fillRect(area.removeFromTop(10.f).withTrimmedLeft(0.f));
-        auto m = r.reduced(10.f, 12.f); m = m.withTop(r.getY() + 12.f + 22.f + 8.f + 22.f + 16.f).withHeight(10.f);
+        area.removeFromTop(12.f);
+        auto bar = [&](float v, const juce::String& n)
+        {
+            auto row = area.removeFromTop(16.f);
+            g.setColour(dim()); g.drawText(n + " " + juce::String((int) std::round(v * 100.f)) + "%", row.removeFromLeft(62.f).toNearestInt(), juce::Justification::left);
+            auto b = row.withSizeKeepingCentre(row.getWidth(), 8.f);
+            g.setColour(grid()); g.fillRect(b); g.setColour(accent()); g.fillRect(b.withWidth(b.getWidth() * v));
+        };
+        bar(ls, ms ? "mid" : "L"); bar(rs, ms ? "side" : "R");
+        area.removeFromTop(4.f);
+        auto m = area.removeFromTop(8.f);
         g.setColour(blue().withAlpha(0.8f)); g.fillRect(m.withWidth(m.getWidth() * (1.f - mix * 0.01f)));
         g.setColour(green()); g.fillRect(m.withTrimmedLeft(m.getWidth() * (1.f - mix * 0.01f)));
-        g.setColour(dim()); g.drawText("dry " + juce::String(100 - (int) mix) + "%   wet " + juce::String((int) mix) + "%", m.toNearestInt().withY(m.toNearestInt().getBottom() + 2).withHeight(11), juce::Justification::centred);
+        g.setColour(dim()); g.drawText("dry " + juce::String(100 - (int) mix) + "%   wet " + juce::String((int) mix) + "%", area.removeFromTop(13.f).toNearestInt(), juce::Justification::centred);
+        meter(g, area.withTrimmedTop(2.f), outLevel.load(), "OUT dB");
     }
 }
