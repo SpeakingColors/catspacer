@@ -9,9 +9,9 @@ inline juce::Colour bg()    { return juce::Colour(0xff0e1213); }
 inline juce::Colour grid()  { return juce::Colour(0xff263230); }
 inline juce::Colour dim()   { return catui::Colours::dim(); }
 inline juce::Colour accent(){ return catui::Colours::accent(); }
-inline juce::Colour green() { return juce::Colour(0xff58e08a); }
-inline juce::Colour blue()  { return juce::Colour(0xff5aa8ff); }
-inline juce::Colour red()   { return juce::Colour(0xffff6b6b); }
+inline juce::Colour green() { return catui::SodaPop::mint(); }
+inline juce::Colour blue()  { return catui::SodaPop::popSky(); }
+inline juce::Colour red()   { return catui::SodaPop::hotPink(); }
 
 inline float freqToX(float hz, juce::Rectangle<float> r, float fmin = 20.f, float fmax = 20000.f)
 { return r.getX() + r.getWidth() * juce::jlimit(0.f, 1.f, std::log(hz / fmin) / std::log(fmax / fmin)); }

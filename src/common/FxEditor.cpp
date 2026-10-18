@@ -96,7 +96,8 @@ void FxEditor::paint(juce::Graphics& g)
 {
     g.fillAll(catui::Colours::panel());
     g.setColour(catui::Colours::accent()); g.setFont(juce::FontOptions(20.f, juce::Font::bold));
-    g.drawText(proc.getName(), 12, 8, 300, 26, juce::Justification::left);
+    catui::drawCatHead(g, juce::Rectangle<float>(10.f, 4.f, 34.f, 32.f), catui::SodaPop::mint());
+    g.drawText(proc.getName(), 50, 8, 260, 26, juce::Justification::left);
     if (panelMode)
     {
         g.setFont(juce::FontOptions(11.f, juce::Font::bold));
