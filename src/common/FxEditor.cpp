@@ -47,7 +47,23 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
         int index = 0;
         for (auto& ps : specs)
         {
-            Panel pn; pn.title = ps.title; pn.weight = ps.weight;
+            Panel pn; pn.title = ps.title; pn.weight = ps.weight; pn.sp = ps.presets;
+            if (!pn.sp.empty())
+            {
+                pn.spBox = std::make_unique<juce::ComboBox>();
+                pn.spBox->setTextWhenNothingSelected(ps.title + " presets...");
+                for (size_t i = 0; i < pn.sp.size(); ++i) pn.spBox->addItem(pn.sp[i].name, (int) i + 1);
+                auto* box = pn.spBox.get(); auto list = pn.sp; auto* pr = &p;
+                box->onChange = [box, list, pr]
+                {
+                    const int i = box->getSelectedId() - 1;
+                    if (i < 0 || i >= (int) list.size()) return;
+                    for (auto& kv : list[(size_t) i].values)
+                        if (auto* r = pr->apvts.getParameter(kv.first)) r->setValueNotifyingHost(r->convertTo0to1(kv.second));
+                };
+                box->setTooltip("Presets for this section only: they change just these controls and leave the rest as it is.");
+                addAndMakeVisible(*box);
+            }
             pn.view = std::make_unique<catfx::PanelView>(p, index++);
             addAndMakeVisible(*pn.view);
             for (auto& id : ps.knobs)
@@ -93,6 +109,7 @@ void FxEditor::applyTips()
     for (auto& k : knobs) { k->s.setTooltip(on ? k->tip : juce::String()); k->l.setTooltip(on ? k->tip : juce::String()); }
     for (auto& c : combos) { c->box.setTooltip(on ? c->tip : juce::String()); c->tog.setTooltip(on ? c->tip : juce::String()); }
     presetBox.setTooltip(on ? "Factory presets (our own). Use the arrows to step through them." : juce::String());
+    for (auto& pn : panels) if (pn.spBox) pn.spBox->setTooltip(on ? "Presets for this section only: they change just these controls and leave the rest as it is." : juce::String());
     randBtn.setTooltip(on ? "Set the controls to random values (output level and on/off switches are kept)." : juce::String());
     tipsBtn.setTooltip(on ? "Turn these hover tips on or off." : juce::String());
 }
@@ -141,7 +158,7 @@ void FxEditor::resized()
         {
             const int w = (int) std::round(usable * pn.weight / total);
             auto col = juce::Rectangle<int>(x, r.getY(), w, r.getHeight());
-            int toggleRows = 0; for (size_t i = 0; i < pn.cs.size(); ++i) { ++toggleRows; if (pn.cs[i]->isToggle && i + 1 < pn.cs.size() && !pn.cs[i + 1]->isToggle) ++i; }
+            int toggleRows = pn.spBox ? 1 : 0; for (size_t i = 0; i < pn.cs.size(); ++i) { ++toggleRows; if (pn.cs[i]->isToggle && i + 1 < pn.cs.size() && !pn.cs[i + 1]->isToggle) ++i; }
             auto ctrl = col.removeFromBottom(92 + toggleRows * 28);
             pn.view->setBounds(col.withTrimmedBottom(22));
             auto krow = ctrl.removeFromTop(92);
@@ -155,6 +172,7 @@ void FxEditor::resized()
                     pn.ks[i]->s.setBounds(c);
                 }
             }
+            if (pn.spBox) pn.spBox->setBounds(ctrl.removeFromTop(28).reduced(0, 2).withTrimmedLeft(16));
             for (size_t i = 0; i < pn.cs.size(); ++i)
             {
                 auto* c = pn.cs[i];

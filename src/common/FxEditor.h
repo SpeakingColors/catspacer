@@ -62,7 +62,8 @@ private:
         std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> a;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> b;
     };
-    struct Panel { juce::String title; std::unique_ptr<catfx::PanelView> view; std::vector<K*> ks; std::vector<C*> cs; float weight = 1.f; };
+    struct Panel { juce::String title; std::unique_ptr<catfx::PanelView> view; std::vector<K*> ks; std::vector<C*> cs; float weight = 1.f;
+                   std::vector<catfx::SectionPreset> sp; std::unique_ptr<juce::ComboBox> spBox; };
     void applyTips();
     catfx::FxBase& proc;
     juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" }, tipsBtn { "i" };

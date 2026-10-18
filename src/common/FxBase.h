@@ -7,7 +7,9 @@ namespace catfx
 struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; juce::String tip = {}; };
 struct ChoiceSpec { juce::String id, name; juce::StringArray items; int def = 0; juce::String tip = {}; };
 // A panel groups one display with the controls that drive it (controls are drawn underneath it).
-struct PanelSpec { juce::String title; std::vector<juce::String> knobs, choices; float weight = 1.f; };
+// A preset that changes only the controls of one panel (the editor shows it as a menu under that panel)
+struct SectionPreset { juce::String name; std::vector<std::pair<juce::String, float>> values; };
+struct PanelSpec { juce::String title; std::vector<juce::String> knobs, choices; float weight = 1.f; std::vector<SectionPreset> presets; };
 
 // Shared base for the cat FX: parameters from specs, stereo in/out (optional sidechain), state, generic editor.
 class FxBase : public juce::AudioProcessor
