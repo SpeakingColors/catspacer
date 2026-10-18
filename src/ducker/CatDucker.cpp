@@ -216,7 +216,13 @@ void CatDucker::paintPanel(int idx, juce::Graphics& g, juce::Rectangle<float> r)
         g.setColour(juce::Colours::white); g.strokePath(cut, juce::PathStrokeType(2.2f));
         for (float hz : { get("lo"), get("hi") }) { const float x = freqToX(hz, p, 30.f, 20000.f); g.setColour(accent().withAlpha(0.7f)); g.drawVerticalLine((int) x, p.getY(), p.getBottom()); }
         g.setFont(juce::FontOptions(11.f)); g.setColour(dim());
-        g.drawText(hasSc.load() ? "sidechain (blue, after low/high cut), main (grey), cut applied (white, dB below 0)" : "no sidechain connected: using the main signal as sidechain", (int) p.getX(), (int) r.getY() + 1, (int) p.getWidth(), 11, juce::Justification::left);
+        if (hasSc.load())
+        {
+            int x = (int) p.getX();
+            for (auto [txt, col] : { std::pair<const char*, juce::Colour>{ "sidechain", blue() }, { "main", dim() }, { "cut applied (dB below 0)", juce::Colours::white } })
+            { g.setColour(col); const int w = juce::GlyphArrangement::getStringWidthInt(g.getCurrentFont(), txt) + 14; g.drawText(txt, x, (int) r.getY() + 1, w, 11, juce::Justification::left); x += w; }
+        }
+        else g.drawText("no sidechain connected: using the main signal as sidechain", (int) p.getX(), (int) r.getY() + 1, (int) p.getWidth(), 11, juce::Justification::left);
     }
     else if (idx == 1)  // attack / release shape
     {
