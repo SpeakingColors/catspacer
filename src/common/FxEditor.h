@@ -72,9 +72,11 @@ private:
         explicit Content(FxEditor& o) : ed(o) {}
         void paint(juce::Graphics& g) override { ed.paintContent(g); }
         void resized() override { ed.layoutContent(); }
+        void mouseDoubleClick(const juce::MouseEvent& e) override { ed.cheekDoubleClick(e.getPosition()); }
         FxEditor& ed;
     };
     void paintContent(juce::Graphics&);
+    void cheekDoubleClick(juce::Point<int>);   // double click on a wood cheek: back to 100%
     void layoutContent();
     struct K
     {

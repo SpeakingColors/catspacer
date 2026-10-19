@@ -303,6 +303,11 @@ void FxEditor::applyTips()
     tipsBtn.setTooltip(on ? "Info bubbles: hover a control for one second to see what it does. Click to turn them off or on." : juce::String());
 }
 
+void FxEditor::cheekDoubleClick(juce::Point<int> p)
+{
+    if (p.x < kCheek || p.x >= baseW - kCheek) setSize(baseW, baseH);
+}
+
 void FxEditor::paintContent(juce::Graphics& g)
 {
     const auto b = content.getLocalBounds();
