@@ -155,6 +155,7 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
         c->tip = spec.tip;
         c->isToggle = spec.items.size() == 2 && spec.items[0] == "Off";
         c->isLimiter = spec.id == "safelim";
+        c->isNasty = spec.id == "nasty";
         c->l.setText(spec.name, juce::dontSendNotification);
         c->l.setFont(juce::FontOptions(11.f));
         c->l.setColour(juce::Label::textColourId, kMuted);
@@ -250,7 +251,8 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
     border.setBorderThickness(juce::BorderSize<int>(6));
     const double sc = juce::jlimit(0.6, 2.0, (double) proc.apvts.state.getProperty("uiScale", 1.0));
     setSize((int) std::lround(baseW * sc), (int) std::lround(baseH * sc));
-    gate.onFrame = [this] { if (panelMode) for (auto& pn : panels) pn.view->repaint(); else viz.repaint(); }; // stops while hidden or in the background
+    applyNasty(); lastNasty = proc.nastyOn();
+    gate.onFrame = [this] { const bool nn = proc.nastyOn(); if (nn != lastNasty) { lastNasty = nn; applyNasty(); } if (panelMode) for (auto& pn : panels) pn.view->repaint(); else viz.repaint(); }; // stops while hidden or in the background
     gate.start(30);
 }
 
@@ -263,6 +265,21 @@ void FxEditor::resized()
     border.setBounds(getLocalBounds());
     corner.setBounds(getWidth() - 18, getHeight() - 18, 18, 18);
     proc.apvts.state.setProperty("uiScale", (double) s, nullptr);
+}
+
+// Knobs with an extended range sweep 0 to their normal top while Nasty range is off, and the full extended range while it is on.
+void FxEditor::applyNasty()
+{
+    const bool on = proc.nastyOn();
+    for (size_t i = 0; i < knobs.size() && i < proc.knobSpecs.size(); ++i)
+    {
+        const auto& sp = proc.knobSpecs[i];
+        if (!(sp.hiN > sp.hi)) continue;
+        if (!on)
+            if (auto* pr = proc.apvts.getParameter(sp.id))
+                if (proc.apvts.getRawParameterValue(sp.id)->load() > sp.hi) pr->setValueNotifyingHost(pr->convertTo0to1(sp.hi));
+        knobs[i]->s.setNormalisableRange(juce::NormalisableRange<double>((double) sp.lo, (double) (on ? sp.hiN : sp.hi), 0.0));
+    }
 }
 
 void FxEditor::showSettingsMenu()
@@ -338,6 +355,7 @@ void FxEditor::layoutContent()
     tipsBtn.setBounds(btn(30));
     gearBtn.setBounds(btn(30));
     for (auto& c : combos) if (c->isLimiter) c->tog.setBounds(btn(84));
+    for (auto& c : combos) if (c->isNasty) c->tog.setBounds(btn(112));
     randBtn.setBounds(btn(96));
     if (presetBox.isVisible())
     {
@@ -349,7 +367,7 @@ void FxEditor::layoutContent()
     {
         top.removeFromLeft(240);
         for (auto it = combos.rbegin(); it != combos.rend(); ++it)
-        { auto& c = **it; if (c.isLimiter) continue; auto slot = top.removeFromRight(c.isToggle ? 90 : 150).withSizeKeepingCentre(c.isToggle ? 90 : 150, 30); if (c.isToggle) c.tog.setBounds(slot); else c.box.setBounds(slot); top.removeFromRight(8); }
+        { auto& c = **it; if (c.isLimiter || c.isNasty) continue; auto slot = top.removeFromRight(c.isToggle ? 90 : 150).withSizeKeepingCentre(c.isToggle ? 90 : 150, 30); if (c.isToggle) c.tog.setBounds(slot); else c.box.setBounds(slot); top.removeFromRight(8); }
     }
     r.removeFromTop(8);
     if (panelMode)
@@ -395,7 +413,7 @@ void FxEditor::layoutContent()
         }
         // controls that no panel uses stay hidden
         for (auto& k : knobs) { bool used = false; for (auto& pn : panels) for (auto* q : pn.ks) used |= q == k.get(); k->s.setVisible(used); k->l.setVisible(used); }
-        for (auto& c : combos) { bool used = false; for (auto& pn : panels) for (auto* q : pn.cs) used |= q == c.get(); c->box.setVisible(used && !c->isToggle); c->tog.setVisible((used || c->isLimiter) && c->isToggle); c->l.setVisible(false); }
+        for (auto& c : combos) { bool used = false; for (auto& pn : panels) for (auto* q : pn.cs) used |= q == c.get(); c->box.setVisible(used && !c->isToggle); c->tog.setVisible((used || c->isLimiter || c->isNasty) && c->isToggle); c->l.setVisible(false); }
         content.repaint();
         return;
     }

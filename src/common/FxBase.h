@@ -4,7 +4,7 @@
 
 namespace catfx
 {
-struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; juce::String tip = {}; };
+struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; juce::String tip = {}; float hiN = 0.f; };   // hiN: top of the knob when Nasty range is on (0 = no extended range)
 // Text shown under a knob: unit and sensible decimals (80 Hz, -12.0 dB, 50 %, 0.80), never long raw numbers.
 inline juce::String fmtKnob(const KnobSpec& k, float v)
 {
@@ -72,7 +72,9 @@ public:
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
 
-    float get(const juce::String& id) const { return apvts.getRawParameterValue(id)->load(); }
+    // Value of a control. Knobs with an extended range are held at their normal top while Nasty range is off.
+    float get(const juce::String& id) const { const float v = apvts.getRawParameterValue(id)->load(); return hasNasty ? limitNasty(id, v) : v; }
+    bool nastyOn() const { return pNasty != nullptr && pNasty->load() > 0.5f; }
 
     const std::vector<KnobSpec> knobSpecs;
     const std::vector<ChoiceSpec> choiceSpecs;
@@ -86,6 +88,13 @@ private:
     void parameterGestureChanged(int index, bool starting) override;
     void safetyLimit(juce::AudioBuffer<float>&);
     float limGain = 1.f;
+    bool hasNasty = false; std::atomic<float>* pNasty = nullptr;
+    float limitNasty(const juce::String& id, float v) const
+    {
+        if (nastyOn()) return v;
+        for (auto& k : knobSpecs) if (k.hiN > k.hi && k.id == id) return std::min(v, k.hi);
+        return v;
+    }
     juce::String pluginName;
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout(const std::vector<KnobSpec>&, const std::vector<ChoiceSpec>&);
     static BusesProperties makeBuses(bool sidechain);

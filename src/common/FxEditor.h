@@ -86,13 +86,15 @@ private:
     };
     struct C
     {
-        juce::ComboBox box; juce::ToggleButton tog; juce::Label l; juce::String tip; bool isToggle = false, isLimiter = false;
+        juce::ComboBox box; juce::ToggleButton tog; juce::Label l; juce::String tip; bool isToggle = false, isLimiter = false, isNasty = false;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> a;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> b;
     };
     struct Panel { juce::String title; std::unique_ptr<catfx::PanelView> view; std::vector<K*> ks; std::vector<C*> cs; float weight = 1.f;
                    std::vector<catfx::SectionPreset> sp; std::unique_ptr<juce::ComboBox> spBox; juce::Rectangle<int> box; };
     void applyTips();
+    void applyNasty();
+    bool lastNasty = false;
     catfx::FxBase& proc;
     FxLaf laf;
     Content content { *this };

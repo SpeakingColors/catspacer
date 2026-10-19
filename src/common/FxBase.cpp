@@ -16,28 +16,35 @@ juce::AudioProcessorValueTreeState::ParameterLayout FxBase::makeLayout(const std
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> p;
     for (auto& s : k)
     {
-        juce::NormalisableRange<float> r(s.lo, s.hi);
+        const float top = s.hiN > s.hi ? s.hiN : s.hi;      // the parameter always spans the extended range; Nasty range off holds the sound at the normal top
+        juce::NormalisableRange<float> r(s.lo, top);
         if (s.centre > 0.f) r.setSkewForCentre(s.centre);
         p.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{s.id, 1}, s.name, r, s.def,
             juce::AudioParameterFloatAttributes().withStringFromValueFunction([s](float v, int) { return fmtKnob(s, v); })
-                                                 .withValueFromStringFunction([s](const juce::String& t) { return juce::jlimit(s.lo, s.hi, t.getFloatValue()); })));
+                                                 .withValueFromStringFunction([s](const juce::String& t) { return juce::jlimit(s.lo, s.hiN > s.hi ? s.hiN : s.hi, t.getFloatValue()); })));
     }
     for (auto& s : c)
         p.push_back(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{s.id, 1}, s.name, s.items, s.def));
     return { p.begin(), p.end() };
 }
 
-static std::vector<ChoiceSpec> withLimiter(std::vector<ChoiceSpec> c)
+static bool anyNasty(const std::vector<KnobSpec>& k) { for (auto& s : k) if (s.hiN > s.hi) return true; return false; }
+
+static std::vector<ChoiceSpec> withLimiter(std::vector<ChoiceSpec> c, bool nasty)
 {
     c.push_back({ "safelim", "Limiter", { "Off", "On" }, 1, "Safety limiter on the output: keeps the level from ever passing 0 dBFS, smooth and transparent. Turn it off if you want the raw output (for example to let your own limiter do the work)." });
+    if (nasty)
+        c.push_back({ "nasty", "Nasty range", { "Off", "On" }, 0, "Nasty range: lets Drive, Fuzz, Squeeze, Warm and the other heavy knobs go far past 100 % for really nasty, OTT and Vengeance style sounds. Off keeps every knob at its normal top." });
     return c;
 }
 
 FxBase::FxBase(const juce::String& name, std::vector<KnobSpec> k, std::vector<ChoiceSpec> c0, bool sc)
-    : AudioProcessor(makeBuses(sc)), knobSpecs(k), choiceSpecs(withLimiter(c0)),
-      apvts(*this, nullptr, "STATE", makeLayout(k, withLimiter(c0))), hasSidechain(sc), pluginName(name)
+    : AudioProcessor(makeBuses(sc)), knobSpecs(k), choiceSpecs(withLimiter(c0, anyNasty(k))),
+      apvts(*this, nullptr, "STATE", makeLayout(k, withLimiter(c0, anyNasty(k)))), hasSidechain(sc), pluginName(name)
 {
     for (auto& cs : choiceSpecs) if (auto* p = apvts.getParameter(cs.id)) p->addListener(this);
+    hasNasty = anyNasty(knobSpecs);
+    pNasty = hasNasty ? apvts.getRawParameterValue("nasty") : nullptr;
 }
 
 void FxBase::parameterGestureChanged(int index, bool starting)
@@ -114,7 +121,7 @@ void FxBase::applyPreset(int index)
     presetIndex = index;
     for (auto* p : getParameters())
         if (auto* r = dynamic_cast<juce::RangedAudioParameter*>(p))
-            r->setValueNotifyingHost(r->getDefaultValue());
+            if (r->paramID != "nasty") r->setValueNotifyingHost(r->getDefaultValue());   // Nasty range is the user's choice, presets leave it alone
     for (auto& kv : list[(size_t) index].values)
         if (auto* r = apvts.getParameter(kv.first))
             r->setValueNotifyingHost(r->convertTo0to1(kv.second));
@@ -126,6 +133,10 @@ void FxBase::randomize()
     const auto skip = randomExclude();
     for (auto* p : getParameters())
         if (auto* r = dynamic_cast<juce::RangedAudioParameter*>(p))
-            if (!skip.contains(r->paramID) && r->paramID != "safelim")
-                r->setValueNotifyingHost(rnd.nextFloat());
+            if (!skip.contains(r->paramID) && r->paramID != "safelim" && r->paramID != "nasty")
+            {
+                float t = rnd.nextFloat();
+                if (hasNasty && !nastyOn()) for (auto& k : knobSpecs) if (k.hiN > k.hi && k.id == r->paramID) t *= r->convertTo0to1(k.hi);   // stay inside the normal range
+                r->setValueNotifyingHost(t);
+            }
 }
