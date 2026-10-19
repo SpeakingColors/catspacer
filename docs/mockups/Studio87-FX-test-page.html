@@ -484,7 +484,7 @@ const SHAPE_NAMES = ['Pump, click-free', 'Pump', 'Gate', 'Swell', 'Ramp up', 'St
 function shapeCurve(id, lo = 0, seed = 1) {
   let c = [];
   switch (id) {
-    case 0: c = [P(0, lo, .5), P(.45, 1), P(.97, 1), P(1, lo)]; break;
+    case 0: c = [P(0, lo, .5), P(.4375, 1), P(.9701, 1), P(1, lo)]; break;
     case 1: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
     case 2: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
     case 3: c = [P(0, lo, -.6), P(1, 1)]; break;
@@ -506,7 +506,7 @@ function reverseCurve(cv) { return sanitize(cv.slice().reverse().map(p => ({ x: 
 function flipCurve(cv) { return sanitize(cv.map(p => ({ x: p.x, y: 1 - p.y, c: -p.c }))); }
 
 // ---------- DSP ----------
-const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: true, linear: false, linked: false,
+const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 122.2659, xHi: 1976.9132, slope: 1, multiband: true, linear: false, linked: false,
   sync: true, cycleBeats: 1, hz: 2, trigger: 0, scTrigger: false, threshDb: -24, swing: 0, smooth: 4, offset: 0, offsetSamples: false,
   driveTube: 0, driveTape: 0, driveSoft: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
 const LOUD_LAT = 32;
@@ -1131,7 +1131,7 @@ const SHAPE_NAMES = ['Pump, click-free', 'Pump', 'Gate', 'Swell', 'Ramp up', 'St
 function shapeCurve(id, lo = 0, seed = 1) {
   let c = [];
   switch (id) {
-    case 0: c = [P(0, lo, .5), P(.45, 1), P(.97, 1), P(1, lo)]; break;
+    case 0: c = [P(0, lo, .5), P(.4375, 1), P(.9701, 1), P(1, lo)]; break;
     case 1: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
     case 2: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
     case 3: c = [P(0, lo, -.6), P(1, 1)]; break;
@@ -1153,7 +1153,7 @@ function reverseCurve(cv) { return sanitize(cv.slice().reverse().map(p => ({ x: 
 function flipCurve(cv) { return sanitize(cv.map(p => ({ x: p.x, y: 1 - p.y, c: -p.c }))); }
 
 // ---------- DSP ----------
-const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: true, linear: false, linked: false,
+const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 122.2659, xHi: 1976.9132, slope: 1, multiband: true, linear: false, linked: false,
   sync: true, cycleBeats: 1, hz: 2, trigger: 0, scTrigger: false, threshDb: -24, swing: 0, smooth: 4, offset: 0, offsetSamples: false,
   driveTube: 0, driveTape: 0, driveSoft: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
 const LOUD_LAT = 32;
@@ -1659,21 +1659,22 @@ sctrig: 'Hits on the sidechain input restart the envelope (pick a sidechain soun
     hz: 'Speed in cycles per second when Sync is off. Drag up or down.' };
   const TOOLS = [['Select and move points.', 'M5 3 L5 17 L9 13 L12 20 L14.5 19 L11.5 12 L17 12 Z'], ['Draw a ramp up: drag across the lane.', 'M3 17 L19 5'], ['Draw a ramp down: drag across the lane.', 'M3 5 L19 17'], ['Draw a flat hold: drag across the lane.', 'M3 11 L19 11'], ['Draw a step: hold the level, then jump.', 'M3 17 L11 17 L11 5 L19 5'],
     ['Delete the selected points (nothing selected: reset the lane).', 'M5 6 L17 6 M8 6 L8 4 L14 4 L14 6 M7 6 L8 18 L14 18 L15 6'], ['Select all points in the lane.', 'M4 4 L18 4 L18 18 L4 18 Z'], ['Move the selection (or the whole lane) one grid step left.', 'M17 11 L5 11 M10 6 L5 11 L10 16'], ['Move the selection (or the whole lane) one grid step right.', 'M5 11 L17 11 M12 6 L17 11 L12 16']];
-  const DEF = { power: 1, amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: 1, linear: 0, linked: 0, sync: 1, speed: 3, hz: 2, trigger: 0, sctrig: 0, thresh: -24, swing: 0, smooth: 4, offset: 0, offunit: 0, driveSoft: 0, driveTape: 0, driveTube: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limon: 1, ceil: -0.3, solo: 0, grid: 2, snap: 1, spec: 0, lock: 0 };
+  const DEF = { power: 1, amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 122.2659, xHi: 1976.9132, slope: 1, multiband: 1, linear: 0, linked: 0, sync: 1, speed: 3, hz: 2, trigger: 0, sctrig: 0, thresh: -24, swing: 0, smooth: 4, offset: 0, offunit: 0, driveSoft: 0, driveTape: 0, driveTube: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limon: 1, ceil: -0.3, solo: 0, grid: 2, snap: 1, spec: 0, lock: 0 };
   // Presets. Edit the 'Default' line to change the starting sound. Shape ids: 0 click-free pump, 1 pump, 2 gate, 3 swell, 4 ramp up, 5 step, 6 wave, 7 ramp down, 8 V, 9 trance gate x4, 10 offbeat pump, 11 random steps, 12 tremolo.
-  const PRE = [['Default', {}, [0, 0, 0], [0, 0, 0]], ['Hardstyle kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, driveTube: 12 }, [0, 0, 0], [0, .05, .4]], ['Sidechain house', { amount: 85, speed: 3, slope: 1, smooth: 6 }, [0, 0, 0], [0, .15, .5]],
+  const PRE = [['Default', {}, [-1, -1, -1], [0, 0, 0]], ['Hardstyle kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, driveTube: 12 }, [0, 0, 0], [0, .05, .4]], ['Sidechain house', { amount: 85, speed: 3, slope: 1, smooth: 6 }, [0, 0, 0], [0, .15, .5]],
     ['Trance gate 1/16', { amount: 100, speed: 3, smooth: 8 }, [9, 9, 9], [0, 0, .1]], ['Eighth-note pump', { amount: 90, speed: 3, smooth: 5 }, [10, 10, 10], [0, .1, .45]], ['UK hardcore chop', { amount: 100, speed: 4, swing: 20, driveTape: 25, smooth: 5 }, [2, 2, 2], [0, 0, .2]],
     ['Slow tremolo', { amount: 60, sync: 0, hz: 3.5, smooth: 20 }, [12, 12, 12], [.3, .3, .3]], ['Gentle glue', { amount: 35, speed: 3, smooth: 15 }, [0, 0, 0], [.2, .3, .5]], ['Half-time swell', { amount: 100, speed: 1, smooth: 20 }, [3, 3, 3], [0, 0, .2]],
     ['Audio hit duck', { amount: 100, trigger: 1, sync: 0, hz: 3, thresh: -24, smooth: 5 }, [0, 0, 0], [0, .1, .4]], ['Bass-only duck', { amount: 100, amtMid: 20, amtHi: 0, speed: 3, smooth: 4 }, [0, 0, 0], [0, 0, 0]],
     ['Purr kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, driveDrive: 30, driveTrans: 25, loud: 35 }, [0, 0, 0], [0, .05, .4]], ['Nasty chop', { amount: 100, speed: 4, swing: 15, driveFuzz: 40, driveTape: 20, smooth: 5, loud: 25 }, [2, 2, 2], [0, 0, .2]]];
   const P = { key: 'scaredy', custom: true, def: Object.assign({}, DEF), panels: [], presets: PRE.map(x => [x[0], Object.assign({ _shape: x[2], _lo: x[3] }, x[1])]) };
-  P.curves = [0, 1, 2].map(() => SL.shapeCurve(0, 0));
+  const DEFCURVE = () => [{ x: 0, y: 0.01704525426123893, c: 0.5 }, { x: 0.4375, y: 1, c: 0 }, { x: 0.9701080310541765, y: 1, c: 0 }, { x: 1, y: 0.013215109388956092, c: 0 }];
+  P.curves = [0, 1, 2].map(DEFCURVE);
   P.migrate = o => { if (!o || typeof o !== 'object' || !('drive' in o)) return o; const r = Object.assign({}, o), m = ['driveTube', 'driveTape', 'driveSoft'][(+o.dtype | 0)] || 'driveTube'; if (!(m in r)) r[m] = +o.drive; delete r.drive; delete r.dtype; return r; };
   plugs.scaredy = P;
   let UI = null;
   P.setCurves = cs => { P.curves = [0, 1, 2].map(i => SL.sanitize((cs[i] || cs[1] || [{ x: 0, y: 1, c: 0 }, { x: 1, y: 1, c: 0 }]).map(q => ({ x: +q.x, y: +q.y, c: +q.c })))); UI && UI.repaint(); };
   P.refresh = () => { UI && UI.refresh(); };
-  function applyPreset(i) { const pr = PRE[i]; Object.assign(P.st, P.def); for (const k in pr[1]) P.st[k] = pr[1][k]; P.curves = [0, 1, 2].map(b => SL.shapeCurve(pr[2][b], pr[3][b], 1)); }
+  function applyPreset(i) { const pr = PRE[i]; Object.assign(P.st, P.def); for (const k in pr[1]) P.st[k] = pr[1][k]; P.curves = [0, 1, 2].map(b => pr[2][b] < 0 ? DEFCURVE() : SL.shapeCurve(pr[2][b], pr[3][b], 1)); }
   P.build = (box, key) => {
     const st = P.st; let activeLane = 1, tool = 0, sel = new Set(), alive = true, ro = null;
     const el = (tag, cls, parent, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; if (parent) parent.appendChild(e); return e; };
@@ -1803,7 +1804,7 @@ sctrig: 'Hits on the sidechain input restart the envelope (pick a sidechain soun
     /* crossover dragging (both graphs) */
     const fOf = (x, W, l0 = 34, r0 = 4) => 20 * Math.pow(1000, clamp((x - l0) / (W - l0 - r0), 0, 1)), xOf = (f, W, l0 = 34, r0 = 4) => l0 + (W - l0 - r0) * Math.log(f / 20) / Math.log(1000);
     function xoverDrag(cv2, l0) { let which = -1; cv2.style.touchAction = 'none'; cv2.onpointerdown = e => { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left; const d1 = Math.abs(x - xOf(st.xLo, r.width, l0)), d2 = Math.abs(x - xOf(st.xHi, r.width, l0)); which = Math.min(d1, d2) < 14 ? (d1 < d2 ? 0 : 1) : -1; if (which >= 0) cv2.setPointerCapture(e.pointerId); };
-      cv2.ondblclick = e => { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left, d1 = Math.abs(x - xOf(st.xLo, r.width, l0)), d2 = Math.abs(x - xOf(st.xHi, r.width, l0)); if (Math.min(d1, d2) < 14) { if (d1 < d2) st.xLo = SL.SC_DEF.xLo; else st.xHi = SL.SC_DEF.xHi; dirty(); } };
+      cv2.ondblclick = e => { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left, d1 = Math.abs(x - xOf(st.xLo, r.width, l0)), d2 = Math.abs(x - xOf(st.xHi, r.width, l0)); if (Math.min(d1, d2) < 14) { if (d1 < d2) st.xLo = DEF.xLo; else st.xHi = DEF.xHi; dirty(); } };
       cv2.onpointermove = e => { if (which < 0) { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left; cv2.style.cursor = st.multiband && Math.min(Math.abs(x - xOf(st.xLo, r.width, l0)), Math.abs(x - xOf(st.xHi, r.width, l0))) < 14 ? 'ew-resize' : 'default'; return; } const r = cv2.getBoundingClientRect(), f = fOf(e.clientX - r.left, r.width, l0); if (which === 0) st.xLo = clamp(f, 40, Math.min(400, st.xHi * .9)); else st.xHi = clamp(f, Math.max(800, st.xLo * 1.1), 8000); dirty(); }; cv2.onpointerup = () => which = -1; }
     xoverDrag(crossCv, 34); xoverDrag(specCv, 34);
     /* ----- drawing ----- */
