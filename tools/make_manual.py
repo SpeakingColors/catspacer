@@ -2,7 +2,7 @@
 """Builds the short PDF manual of a cat plugin from its own source (controls, ranges, info-bubble texts, presets)
 plus docs/manual.txt (intro and tips). Usage: python3 tools/make_manual.py <plugin .cpp> <docs/manual.txt> <out.pdf>
 Needs: pip install reportlab"""
-import re, sys
+import re, sys, os
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -137,6 +137,11 @@ if tips:
 if presets:
     story.append(Paragraph("Presets", H2))
     story.append(Paragraph(esc(", ".join(presets)), B))
+_tdir = os.path.join(os.path.dirname(os.path.abspath(txt_path)), "tour")
+if os.path.exists(os.path.join(_tdir, "key.txt")):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from tour_pages import tour_story
+    story += tour_story(_tdir, open(os.path.join(_tdir, "key.txt")).read().strip(), H2, B, CELL, CELLB, SM, TEAL, PANEL, esc, st)
 story.append(Paragraph("Install and use", H2))
 for t in ["Windows: run the installer (.exe). macOS: open the installer (.pkg or .dmg). Linux: install the Flatpak with <font name='Courier'>flatpak install --user</font> and the .flatpak file, or copy the .vst3 folder to ~/.vst3.",
           "Everything works offline. Rescan plugins in your DAW, then look for the plugin under Studio 87.",

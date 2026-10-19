@@ -1,0 +1,343 @@
+{
+ "key": "spacer",
+ "preset": "Kick Carve, Coloured",
+ "box": [
+  100,
+  207.78125,
+  1100,
+  489.390625
+ ],
+ "items": [
+  {
+   "title": "Spectrum and cut",
+   "box": [
+    135,
+    272.78125,
+    567.171875,
+    411.390625
+   ],
+   "disp": {
+    "letter": "A",
+    "box": [
+     143,
+     302.171875,
+     551.171875,
+     194
+    ]
+   },
+   "items": [
+    {
+     "n": 5,
+     "kind": "knob",
+     "name": "Amount",
+     "tip": "Amount: 0 = no ducking at all. Low settings carve only the bands where the sidechain is loud (transparent space). Towards 100 it turns into a full-on pump that ducks everything with each hit. Gradual in between.",
+     "value": "75%",
+     "box": [
+      143,
+      502.171875,
+      108.640625,
+      84
+     ]
+    },
+    {
+     "n": 6,
+     "kind": "knob",
+     "name": "Low cut",
+     "tip": "Low cut: sidechain content below this frequency does not trigger any ducking (stops a kick from carving the whole mix, for example).",
+     "value": "20 Hz",
+     "box": [
+      253.640625,
+      502.171875,
+      108.640625,
+      84
+     ]
+    },
+    {
+     "n": 7,
+     "kind": "knob",
+     "name": "High cut",
+     "tip": "High cut: sidechain content above this frequency does not trigger any ducking.",
+     "value": "1200 Hz",
+     "box": [
+      364.28125,
+      502.171875,
+      108.640625,
+      84
+     ]
+    },
+    {
+     "n": 8,
+     "kind": "knob",
+     "name": "Max cut",
+     "tip": "Max cut: the deepest reduction any band can get at 100 % amount.",
+     "value": "24 dB",
+     "box": [
+      474.921875,
+      502.171875,
+      108.640625,
+      84
+     ]
+    },
+    {
+     "n": 9,
+     "kind": "knob",
+     "name": "Floor",
+     "tip": "Floor: how far below the loudest sidechain band a band can be and still cause ducking. Lower = only the strongest bands duck, higher = more bands duck.",
+     "value": "50 dB",
+     "box": [
+      585.5625,
+      502.171875,
+      108.640625,
+      84
+     ]
+    },
+    {
+     "n": 10,
+     "kind": "knob",
+     "name": "Drive",
+     "tip": "Drive (PurrOne opamp tanh). In Sound mode it dirties the audio you hear, with automatic gain staging so it never gets quieter. In Sidechain mode it colours what the ducker listens to: more harmonics means more bands duck, so the cut gets wider.",
+     "value": "55%",
+     "box": [
+      143,
+      592.171875,
+      126.6875,
+      84
+     ]
+    },
+    {
+     "n": 11,
+     "kind": "knob",
+     "name": "Transistor",
+     "tip": "Transistor (PurrOne, asymmetric, even harmonics). Sound mode: warm, thick even harmonics on the audio, level kept. Sidechain mode: the ducker also reacts one octave up from the fundamental.",
+     "value": "35%",
+     "box": [
+      271.6875,
+      592.171875,
+      126.6875,
+      84
+     ]
+    },
+    {
+     "n": 12,
+     "kind": "knob",
+     "name": "Fuzz",
+     "tip": "Fuzz (PurrOne lopsided clip with octave-up growl). Sound mode: nasty fuzz on the audio, level kept. Sidechain mode: spreads the sidechain energy across the spectrum, so a bass or kick carves holes far up (and the result gets quieter).",
+     "value": "0%",
+     "box": [
+      400.375,
+      592.171875,
+      126.6875,
+      84
+     ]
+    },
+    {
+     "n": 13,
+     "kind": "menu",
+     "name": "Where Drive, Transistor and Fuzz act. Sound",
+     "tip": "Where Drive, Transistor and Fuzz act. Sound: dirties the audio you hear, level kept. Sidechain: only colours what the ducker listens to (Audition shows it). Both: does both. Not ducked: colours only what the sidechain never touches, below the Low cut and above the High cut (needs those set inside 20 Hz to 20 kHz).",
+     "value": "Colour: sound",
+     "box": [
+      531.078125,
+      597.875,
+      163.09375,
+      33
+     ]
+    },
+    {
+     "n": 14,
+     "kind": "button",
+     "name": "Freeze",
+     "tip": "Freeze: holds the current sidechain curve so it keeps carving the same gaps (a static EQ taken from the sidechain).",
+     "value": "",
+     "box": [
+      531.078125,
+      636.875,
+      78.546875,
+      33.59375
+     ]
+    },
+    {
+     "n": 15,
+     "kind": "button",
+     "name": "Audition",
+     "tip": "Audition: listen to the sidechain as the plugin hears it (after colour, low and high cut). Useful for setting the cuts.",
+     "value": "",
+     "box": [
+      615.625,
+      636.875,
+      78.546875,
+      33.59375
+     ]
+    }
+   ],
+   "img": "spacer_p1.png"
+  },
+  {
+   "title": "Timing",
+   "box": [
+    714.171875,
+    272.78125,
+    225.96875,
+    411.390625
+   ],
+   "disp": {
+    "letter": "B",
+    "box": [
+     722.171875,
+     302.171875,
+     209.96875,
+     194
+    ]
+   },
+   "items": [
+    {
+     "n": 16,
+     "kind": "knob",
+     "name": "Attack",
+     "tip": "Attack: how fast the ducking engages when the sidechain gets loud.",
+     "value": "4 ms",
+     "box": [
+      722.171875,
+      502.171875,
+      103.984375,
+      84
+     ]
+    },
+    {
+     "n": 17,
+     "kind": "knob",
+     "name": "Release",
+     "tip": "Release: how long the ducking takes to let go after the sidechain stops. Short = tight, long = the big breathing pump.",
+     "value": "140 ms",
+     "box": [
+      828.15625,
+      502.171875,
+      103.984375,
+      84
+     ]
+    },
+    {
+     "n": 18,
+     "kind": "menu",
+     "name": "Latency",
+     "tip": "Latency: the delay this plugin adds (the host compensates). Shorter = tighter timing but less precise in the bass; longer = cleaner and more exact in the bass.",
+     "value": "Low 512 (11 ms)",
+     "box": [
+      724.171875,
+      592.171875,
+      170,
+      33
+     ]
+    }
+   ],
+   "img": "spacer_p2.png"
+  },
+  {
+   "title": "Stereo",
+   "box": [
+    952.140625,
+    272.78125,
+    212.84375,
+    411.390625
+   ],
+   "disp": {
+    "letter": "C",
+    "box": [
+     960.140625,
+     302.171875,
+     196.84375,
+     194
+    ]
+   },
+   "items": [
+    {
+     "n": 19,
+     "kind": "knob",
+     "name": "Pan",
+     "tip": "Pan: moves the effect toward one side. Left of centre applies less to the right channel, right of centre applies less to the left (or to side instead of mid in M/S).",
+     "value": "0",
+     "box": [
+      960.140625,
+      502.171875,
+      97.421875,
+      84
+     ]
+    },
+    {
+     "n": 20,
+     "kind": "knob",
+     "name": "Mix",
+     "tip": "Mix: dry/wet blend of the ducked signal.",
+     "value": "100%",
+     "box": [
+      1059.5625,
+      502.171875,
+      97.421875,
+      84
+     ]
+    },
+    {
+     "n": 21,
+     "kind": "button",
+     "name": "M/S",
+     "tip": "Stereo mode: L/R ducks left and right, M/S ducks mid and side.",
+     "value": "",
+     "box": [
+      962.140625,
+      592.171875,
+      50.6875,
+      33.59375
+     ]
+    }
+   ],
+   "img": "spacer_p3.png"
+  }
+ ],
+ "displays": [],
+ "top": [
+  {
+   "n": 1,
+   "name": "Preset menu",
+   "tip": "Factory presets (our own) and your saved presets.",
+   "box": [
+    769.765625,
+    225.28125,
+    175,
+    33
+   ]
+  },
+  {
+   "n": 2,
+   "name": "Randomize",
+   "tip": "Set the knobs to random values (output level, mix, cuts and pan are kept).",
+   "box": [
+    952.765625,
+    224.984375,
+    97.390625,
+    33.59375
+   ]
+  },
+  {
+   "n": 3,
+   "name": "Limiter",
+   "tip": "Safety limiter on the output: keeps the level from ever passing 0 dBFS, smooth and transparent. Turn it off for the raw output.",
+   "box": [
+    1058.15625,
+    224.984375,
+    68.84375,
+    33.59375
+   ]
+  },
+  {
+   "n": 4,
+   "name": "Info bubbles (i)",
+   "tip": "Info bubbles: hover a control for one second to see what it does. Click to turn them off or on.",
+   "box": [
+    1135,
+    226.78125,
+    30,
+    30
+   ]
+  }
+ ]
+}

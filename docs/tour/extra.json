@@ -1,0 +1,106 @@
+{
+ "crusher": {
+  "flow": "Input > Distortion > Filter > Compressor > Master (volume, dry/wet mix) > output. Each of the first three stages has its own On button. The Clipper and Limiter switches in the header act at the very end.",
+  "names": {
+   "8": "Distortion type",
+   "12": "Filter type"
+  },
+  "displays": {
+   "A": "Transfer curve of the distortion. Horizontal axis: input level from -1 to +1. Vertical axis: output level. The orange line is the shape the type and Drive give; a flatter top means harder clipping. The white dot is the live input level, so you see where the signal sits on the curve. The label top right shows the gain applied by Drive.",
+   "B": "Frequency response of the 24 dB filter. Horizontal axis: frequency (log, 50 Hz to 20 kHz). Vertical axis: gain in dB (+12 to -36). The teal line follows Cutoff, Res and the filter type; the label shows the cutoff.",
+   "C": "Compressor curve plus gain reduction meter. Horizontal axis: input level in dB, vertical axis: output level in dB; the thin diagonal is 'no change'. The orange line bends at the threshold (pink vertical line); the labels give threshold, ratio and make-up gain, all set together by Amount. The white dot is the live level. The bar on the right (GR) shows how many dB the compressor is pulling down right now.",
+   "D": "Input and output meters in dB (peak, with a hold line) and a dry/wet bar: pink is dry, teal is wet. Volume is printed under the bar."
+  },
+  "deep": [
+   "Distortion has ten types. Drive goes to 300 % and Mech to 200 % in the extended range (hold the knob past the normal range in the plugin; the test page shows the same ranges).",
+   "Filter is a 24 dB per octave design with three modes. Band-pass is scaled so it has unity gain at the cutoff, so switching types does not jump in level.",
+   "Compressor Amount moves threshold, ratio and make-up gain together. The make-up is automatic: a slow 400 ms RMS follower compares what went in with what comes out and keeps the loudness, with the gain rising over about 50 ms and falling over about 300 ms so it never pumps audibly by itself.",
+   "Phat mode adds low-end weight before the compressor, uses a slower release and a soft ceiling: made for kicks and bass.",
+   "Knob changes reach the sound within one audio buffer; smoothing never exceeds 20 ms so there is no zipper noise and no sluggish feel.",
+   "Clipper and Limiter in the header are the output safety stages: Clipper rounds peaks, Limiter stops anything passing the ceiling."
+  ]
+ },
+ "fat": {
+  "flow": "Input > Saturation (Drive, Transistor, Grit) > Tone (Color, Fuzz) > Stereo Turbo > Mix and Output. Transistor and Grit only work with the PurrOne stack character.",
+  "names": {
+   "9": "Saturation character"
+  },
+  "displays": {
+   "A": "Transfer curve of the saturation. Horizontal: normalised input level, vertical: output. The orange line shows how Drive (and the PurrOne stack stages) bend the wave; the white dot is the live level. The label top right names the character and the gain from Drive.",
+   "B": "Tone curve: the equalisation the Color and Fuzz knobs add before and inside the saturation. Horizontal: frequency (50 Hz to 20 kHz), vertical: dB (-6 to +18). Flat at 0 dB means both knobs are off. The labels show the Color centre frequency and that Fuzz adds highs.",
+   "C": "Stereo Turbo view: a vertical line for the mid (centre) signal, a horizontal one for the side signal, a mono sum bar and the right channel delay in ms. With Turbo at 0 nothing is delayed.",
+   "D": "Input and output meters in dB and the dry/wet bar (pink dry, teal wet), with the output level below."
+  },
+  "deep": [
+   "Two characters: Shipped is the plain tanh style saturation; PurrOne stack is the three stage colour shaper from the PurrOne synth (opamp tanh, asymmetric transistor with even harmonics, lopsided fuzz).",
+   "With the stack, Drive above 80 % adds a second stage and Grit above 80 % adds a smooth octave-up growl. A fizz low-pass closes as it gets nastier so there is no digital buzz.",
+   "Stereo Turbo delays the right channel by up to 12 ms. Always check the mix in mono: too much can thin the sound out.",
+   "Extended ranges: Drive and Fuzz go to 300 %.",
+   "Knob changes reach the sound within one buffer; smoothing is at most 20 ms."
+  ]
+ },
+ "spacer": {
+  "flow": "Main input and sidechain input > 64 band spectrum analysis > cut curve > applied to the main signal (and mixed with a broadband pump as Amount rises) > optional colour stage (Drive, Transistor, Fuzz) > Mix, Pan, M/S > output.",
+  "names": {
+   "13": "Colour menu",
+   "18": "Latency menu",
+   "21": "Stereo mode (L/R or M/S)"
+  },
+  "displays": {
+   "A": "Main display, frequency on the horizontal axis (log, 20 Hz to 20 kHz), dB on the vertical axis. Grey filled shape: the main signal spectrum. Blue line: the sidechain spectrum as the plugin hears it (coloured and after the cuts). White line: the cut applied in dB below 0, which is what is being carved out of the main sound right now. Two orange vertical lines mark Low cut and High cut: the sidechain is ignored outside them.",
+   "B": "Shape of one ducking hit: depth against time. The curve falls at the Attack time and recovers at the Release time; both are printed under the graph.",
+   "C": "Per channel amount bars (L and R), a dry/wet bar (pink dry, teal wet) and an output level meter in dB."
+  },
+  "deep": [
+   "Amount is a true blend: at 0 % the plugin is a bit-exact bypass (tested to -150 dB); low values carve only the bands where the sidechain is loud; towards 100 % the carve turns into a full broadband pump that ducks everything on every hit. Measured after a kick: about -3, -7, -12 and -19 dB at 25, 50, 75 and 100 %.",
+   "No threshold: a band is cut when it is within Floor dB of the loudest sidechain band, down to at most Max cut dB.",
+   "Colour menu: Sound colours the whole sound before ducking (level kept automatically); Sidechain colours only what the ducker listens to (it widens the cut and costs about 3 LU of loudness); Both does both; Not ducked colours only the part below Low cut and above High cut, which the sidechain never touches.",
+   "Drive, Transistor and Fuzz go to 150 % (300 % for the nastiest settings) and come from PurrOne.",
+   "Latency: Ultra 256, Low 512, Normal 1024, High 2048 samples (plus a few for colour). The plugin reports it exactly and the host compensates, so tracks stay aligned.",
+   "Freeze holds the current sidechain curve; Audition lets you hear the sidechain exactly as the plugin hears it."
+  ]
+ },
+ "bass": {
+  "flow": "Input > Bass range picks the lows > harmonic generator (Drive, Even/Odd, Harmonic filter) shaped by Dynamics > mixed with the original bass (Original bass and Harmonics levels) > Output.",
+  "names": {
+   "8": "Harmonic filter"
+  },
+  "displays": {
+   "A": "Frequency picture. Horizontal: frequency (log), vertical: dB. Blue line: what is left of the original bass (the low-pass set by Bass range). Orange line: the harmonics that are added. The labels give the two levels you set and, under them, the live levels the plugin measures on your signal.",
+   "B": "One cycle of a bass wave. Blue is the original sine, orange is the same wave after the harmonic generator. Even % and odd % show the mix of the two harmonic kinds set by Even/Odd.",
+   "C": "Dynamics law: input bass level (horizontal, dB) against harmonics level (vertical, dB). The thin diagonal is a neutral response, the orange line is the Dynamics setting: above the diagonal on one side of the peak and below it on the other. The white dot is the live level; dyn and the response time are printed in the corner.",
+   "D": "Input and output meters in dB."
+  },
+  "deep": [
+   "Even harmonics are warm and round (rectifier style); odd harmonics are harder (clipper style). Even/Odd blends the two.",
+   "Dynamics is bipolar from -100 to +100. 0 is off (neutral). Negative evens out loud and quiet notes (quiet notes get more harmonics); positive makes loud notes carry far more harmonics than quiet ones. Measured on a rumble source, the harmonic level against bass level slope goes from about -0.68 at -100 through 0.40 at off to about 2.0 at +100.",
+   "Dyn response is the follower time (1 to 1000 ms): short snaps on every hit, long glides over whole notes. At Dynamics 0 it does nothing.",
+   "Harmonics are tied to the Bass range band so small speakers suggest deep bass; Original bass can be pulled down to free headroom.",
+   "Knob changes reach the sound within one buffer; smoothing is at most 20 ms. Old saved projects from before the bipolar Dynamics read the new Dynamics as almost off."
+  ]
+ },
+ "mx": {
+  "flow": "Input (+ Push) > Tone shaping (Lo contour, Bass harmonics, Process, Air) > Squeeze (three band, style, Opto) > Warm > Clip > Ceiling limiter > Mix and Output. Loudness match keeps the level of heavy styles.",
+  "names": {
+   "9": "Air shaper",
+   "13": "Squeeze style",
+   "14": "Loudness match",
+   "18": "Warm character",
+   "19": "Clip position"
+  },
+  "displays": {
+   "A": "Tone curve, the sum of the four tone controls. Horizontal: frequency (log), vertical: dB. White line: the total. Coloured fills: Lo contour (blue), Bass harmonics (orange), Process (pink), Air (teal), with their live dB values on top. The vertical scale follows the knobs from -6 to +12 dB.",
+   "B": "The three squeeze bands (Low, Mid, High). Grey bars: level before the squeeze; coloured bars: level after, with the value in dB under each band. The label top right says whether loudness match is on.",
+   "C": "Transfer curve of Warm plus Clip and the Ceiling. Horizontal: input level, vertical: output. The orange line shows the combined shape, the pink line is the ceiling, the white dot is the live level.",
+   "D": "Input and output meters in dB with the dry/wet bar (pink dry, teal wet)."
+  },
+  "deep": [
+   "Squeeze works on three bands (low, mid, high) and picks the style chain: choosing a style moves Squeeze, Push and Opto to match it. Extended ranges: Squeeze to 250 % (OTT territory), Push to 36 dB.",
+   "Loudness match is a slow closed-loop follower that lifts the squeezed sound back to the level that went in. Auto turns it on for OTT Nasty and Vengeance Slam, off for the other styles.",
+   "Opto is an LA-2A style leveller added on top: slow and program dependent.",
+   "Warm characters other than tanh use the PurrOne colour stages, oversampled 2x. Stack grows from drive to transistor to fuzz as Warm is pushed.",
+   "Clip: a smooth clipper at the Ceiling, up to 9 dB harder, then the limiter. Post (before the limiter) is the mastering way; Pre clips the input.",
+   "Tone curve is measured per component and scaled live by the knobs, so the display is the real response, not a drawing."
+  ]
+ }
+}
