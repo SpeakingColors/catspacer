@@ -17,7 +17,7 @@ src = re.sub(r'"\s*\n\s*"', '', src)   # join split string literals
 name = re.search(r'FxBase\("([^"]+)"', src).group(1)
 S = r'"((?:[^"\\]|\\.)*)"'
 num = r'(-?[\d.]+)f?'
-knobs = {m.group(1): m.groups() for m in re.finditer(r'\{\s*"(\w+)",\s*"([^"]+)",\s*"([^"]*)",\s*' + num + r',\s*' + num + r',\s*' + num + r',\s*' + num + r',\s*' + S + r'\s*\}', src)}
+knobs = {m.group(1): m.groups() for m in re.finditer(r'\{\s*"(\w+)",\s*"([^"]+)",\s*"([^"]*)",\s*' + num + r',\s*' + num + r',\s*' + num + r',\s*' + num + r',\s*' + S + r'(?:,\s*' + num + r')?\s*\}', src)}
 choices = {m.group(1): m.groups() for m in re.finditer(r'\{\s*"(\w+)",\s*"([^"]+)",\s*\{([^}]*)\},\s*(\d+),\s*' + S + r'\s*\}', src)}
 panels = []
 pm = re.search(r'::panels\(\) const\s*\{(.*?)\n\}', src, re.S)
@@ -52,46 +52,67 @@ CELL = st("c", fontSize=9, leading=12, textColor=INK)
 CELLB = st("cb", fontSize=9, leading=12, textColor=PINK, font="Helvetica-Bold")
 
 def logo():
-    """Draws assets/icon.svg (the plugin's own cat head) with reportlab shapes."""
-    import os, xml.etree.ElementTree as ET
-    from reportlab.graphics.shapes import Path, Group
+    """Draws assets/icon.svg (the plugin's own icon) with reportlab shapes: rect, circle, ellipse, path (M L H V Q T C S Z, absolute and relative), groups, fill inheritance, opacity and rotate transforms."""
+    import os, math, xml.etree.ElementTree as ET
+    from reportlab.graphics.shapes import Path, Group, Ellipse
     svg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "icon.svg")
     root = ET.parse(svg).getroot(); K = 15.0 / 128.0 * mm * 1.0
-    d = Drawing(15 * mm, 15 * mm); g = Group(); g.transform = (K, 0, 0, -K, 0, 15 * mm); d.add(g)
+    d = Drawing(15 * mm, 15 * mm); top = Group(); top.transform = (K, 0, 0, -K, 0, 15 * mm); d.add(top)
     col = lambda v: None if v in (None, "none") else colors.HexColor(v)
-    def style(e, o):
-        f, sk = e.get("fill"), e.get("stroke")
+    def style(a, o):
+        f, sk = a.get("fill"), a.get("stroke")
         o.fillColor = col(f) if f else (None if sk else colors.black); o.strokeColor = col(sk)
-        o.strokeWidth = float(e.get("stroke-width", 1)); o.strokeLineCap = 1 if e.get("stroke-linecap") == "round" else 0; o.strokeLineJoin = 1 if e.get("stroke-linejoin") == "round" else 0
-        if e.get("stroke-dasharray"): o.strokeDashArray = [float(x) for x in e.get("stroke-dasharray").split()]
+        o.strokeWidth = float(a.get("stroke-width", 1)); o.strokeLineCap = 1 if a.get("stroke-linecap") == "round" else 0; o.strokeLineJoin = 1 if a.get("stroke-linejoin") == "round" else 0
+        if a.get("stroke-dasharray"): o.strokeDashArray = [float(x) for x in a.get("stroke-dasharray").split()]
+        if a.get("opacity"):
+            op = float(a.get("opacity")); o.fillOpacity = op; o.strokeOpacity = op
         return o
-    for e in root.iter():
-        t = e.tag.split("}")[1]
-        if t == "rect":
-            r = Rect(float(e.get("x", 0)), float(e.get("y", 0)), float(e.get("width")), float(e.get("height")), rx=float(e.get("rx", 0)), ry=float(e.get("rx", 0))); g.add(style(e, r))
-        elif t == "circle": g.add(style(e, Circle(float(e.get("cx")), float(e.get("cy")), float(e.get("r")))))
-        elif t == "ellipse":
-            from reportlab.graphics.shapes import Ellipse
-            g.add(style(e, Ellipse(float(e.get("cx")), float(e.get("cy")), float(e.get("rx")), float(e.get("ry")))))
-        elif t == "path":
-            toks = re.findall(r"[MLQTZmlqtz]|-?[\d.]+", e.get("d")); i = 0; cmd = None; cur = (0, 0); start = (0, 0); lastc = None
-            P = Path(); P.points = []; P.operators = []
-            def num():
-                nonlocal i; v = float(toks[i]); i += 1; return v
-            while i < len(toks):
-                if toks[i].isalpha(): cmd = toks[i]; i += 1
-                if cmd == "M":
-                    cur = (num(), num()); start = cur; P.moveTo(*cur); cmd = "L"; lastc = None
-                elif cmd == "L":
-                    cur = (num(), num()); P.lineTo(*cur); lastc = None
-                elif cmd in "QT":
-                    if cmd == "Q": c = (num(), num())
-                    else: c = (2 * cur[0] - lastc[0], 2 * cur[1] - lastc[1]) if lastc else cur
-                    en = (num(), num())
-                    P.curveTo(cur[0] + 2 / 3 * (c[0] - cur[0]), cur[1] + 2 / 3 * (c[1] - cur[1]), en[0] + 2 / 3 * (c[0] - en[0]), en[1] + 2 / 3 * (c[1] - en[1]), *en); cur = en; lastc = c
-                elif cmd in "Zz": P.closePath(); cur = start; lastc = None
-                else: i += 1
-            g.add(style(e, P))
+    def path(dstr):
+        toks = re.findall(r"[A-Za-z]|-?\d*\.?\d+", dstr); i = 0; cmd = None; cur = (0.0, 0.0); start = cur; lastq = None; lastc = None
+        P = Path(); P.points = []; P.operators = []
+        def num():
+            nonlocal i; v = float(toks[i]); i += 1; return v
+        while i < len(toks):
+            if toks[i].isalpha(): cmd = toks[i]; i += 1
+            rel = cmd.islower(); c = cmd.upper(); ox, oy = cur if rel else (0.0, 0.0)
+            if c == "M":
+                cur = (ox + num(), oy + num()); start = cur; P.moveTo(*cur); cmd = "l" if rel else "L"; lastq = lastc = None
+            elif c == "L":
+                cur = (ox + num(), oy + num()); P.lineTo(*cur); lastq = lastc = None
+            elif c == "H":
+                cur = (ox + num() if rel else num(), cur[1]); P.lineTo(*cur); lastq = lastc = None
+            elif c == "V":
+                cur = (cur[0], oy + num() if rel else num()); P.lineTo(*cur); lastq = lastc = None
+            elif c in "QT":
+                if c == "Q": q = (ox + num(), oy + num())
+                else: q = (2 * cur[0] - lastq[0], 2 * cur[1] - lastq[1]) if lastq else cur
+                en = (ox + num(), oy + num())
+                P.curveTo(cur[0] + 2 / 3 * (q[0] - cur[0]), cur[1] + 2 / 3 * (q[1] - cur[1]), en[0] + 2 / 3 * (q[0] - en[0]), en[1] + 2 / 3 * (q[1] - en[1]), *en); cur = en; lastq = q; lastc = None
+            elif c in "CS":
+                if c == "C": c1 = (ox + num(), oy + num())
+                else: c1 = (2 * cur[0] - lastc[0], 2 * cur[1] - lastc[1]) if lastc else cur
+                c2 = (ox + num(), oy + num()); en = (ox + num(), oy + num())
+                P.curveTo(c1[0], c1[1], c2[0], c2[1], *en); cur = en; lastc = c2; lastq = None
+            elif c == "Z": P.closePath(); cur = start; lastq = lastc = None
+            else: i += 1
+        return P
+    def walk(e, parent, inh):
+        for ch in e:
+            t = ch.tag.split("}")[1]; a = dict(inh); a.update(ch.attrib)
+            if t == "g":
+                sub = Group(); parent.add(sub); walk(ch, sub, {k: v for k, v in a.items() if k in ("fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "opacity")}); continue
+            if t == "rect":
+                o = Rect(float(a.get("x", 0)), float(a.get("y", 0)), float(a.get("width")), float(a.get("height")), rx=float(a.get("rx", 0)), ry=float(a.get("rx", 0)))
+            elif t == "circle": o = Circle(float(a.get("cx")), float(a.get("cy")), float(a.get("r")))
+            elif t == "ellipse": o = Ellipse(float(a.get("cx")), float(a.get("cy")), float(a.get("rx")), float(a.get("ry")))
+            elif t == "path": o = path(a.get("d"))
+            else: continue
+            style(a, o); tr = a.get("transform"); m = re.match(r"rotate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)[ ,]+(-?[\d.]+)\s*\)", tr or "")
+            if m:
+                ang, cx, cy = (float(m.group(k)) for k in (1, 2, 3)); cs, sn = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+                wrap = Group(o); wrap.transform = (cs, sn, -sn, cs, cx - cx * cs + cy * sn, cy - cx * sn - cy * cs); parent.add(wrap)
+            else: parent.add(o)
+    walk(root, top, {})
     return d
 
 esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
