@@ -61,6 +61,12 @@ void FxLaf::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h, floa
 void FxLaf::drawButtonBackground(juce::Graphics& g, juce::Button& b, const juce::Colour&, bool hi, bool down)
 {
     auto r = b.getLocalBounds().toFloat().reduced(0.5f);
+    if (b.getComponentID() == "gbtn")
+    {
+        g.setColour(hi || down ? kPanel2.brighter(0.15f) : kPanel2); g.fillEllipse(r);
+        g.setColour(kAmber); g.drawEllipse(r, 1.5f);
+        return;
+    }
     const bool round = b.getComponentID() == "ibtn", on = b.getToggleState();
     juce::Colour c = on ? kAmber : kPanel2;
     if (down) c = c.brighter(0.15f); else if (hi) c = c.brighter(0.08f);
@@ -72,6 +78,21 @@ void FxLaf::drawButtonBackground(juce::Graphics& g, juce::Button& b, const juce:
 
 void FxLaf::drawButtonText(juce::Graphics& g, juce::TextButton& b, bool, bool)
 {
+    if (b.getComponentID() == "gbtn")
+    {
+        auto c = b.getLocalBounds().toFloat().getCentre();
+        const float R = (float) juce::jmin(b.getWidth(), b.getHeight()) * 0.5f;
+        g.setColour(kAmber);
+        juce::Path gear;
+        for (int i = 0; i < 8; ++i)
+        {
+            gear.addRectangle(-R * 0.10f, -R * 0.56f, R * 0.20f, R * 0.18f);
+            gear.applyTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::pi / 4.f));
+        }
+        g.fillPath(gear, juce::AffineTransform::translation(c.x, c.y));
+        g.drawEllipse(c.x - R * 0.34f, c.y - R * 0.34f, R * 0.68f, R * 0.68f, R * 0.16f);
+        return;
+    }
     const bool round = b.getComponentID() == "ibtn";
     g.setColour(b.getToggleState() ? juce::Colour(0xff111111) : kText);
     if (round) g.setFont(juce::Font(juce::FontOptions("Georgia", 15.f, juce::Font::bold | juce::Font::italic)));
@@ -209,6 +230,9 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
     tipsBtn.setToggleState(p.tipsOn(), juce::dontSendNotification);
     tipsBtn.onClick = [this] { proc.setTipsOn(tipsBtn.getToggleState()); applyTips(); };
     content.addAndMakeVisible(tipsBtn);
+    gearBtn.setComponentID("gbtn");
+    gearBtn.onClick = [this] { showSettingsMenu(); };
+    content.addAndMakeVisible(gearBtn);
     applyTips();
     {   const auto nm = proc.getName();
         logo = catui::makeFxLogo(nm.containsIgnoreCase("Crusher") ? "crusher" : nm.containsIgnoreCase("Fat") ? "fatcat" : nm.containsIgnoreCase("Spacer") ? "spacer"
@@ -241,6 +265,32 @@ void FxEditor::resized()
     proc.apvts.state.setProperty("uiScale", (double) s, nullptr);
 }
 
+void FxEditor::showSettingsMenu()
+{
+    const juce::String nm = proc.getName();
+    juce::String repo = "catcrusher-vst";
+    if (nm == "Fat Cat") repo = "FatCat"; else if (nm == "Cat Spacer") repo = "catspacer";
+    else if (nm == "Meowbass") repo = "meowbass"; else if (nm == "Meowximizer") repo = "Meowximizer";
+#ifdef JucePlugin_VersionString
+    const juce::String ver = JucePlugin_VersionString;
+#else
+    const juce::String ver = "?";
+#endif
+    juce::PopupMenu m;
+    m.addItem(100, "Studio 87 " + nm + " v" + ver, false);
+    m.addSeparator();
+    m.addItem(1, "Open GitHub page");
+    m.addItem(2, "Open releases page");
+    m.addItem(3, "Info bubbles", true, proc.tipsOn());
+    const juce::String url = "https://github.com/SpeakingColors/" + repo;
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&gearBtn), [this, url](int r)
+    {
+        if (r == 1) juce::URL(url).launchInDefaultBrowser();
+        else if (r == 2) juce::URL(url + "/releases").launchInDefaultBrowser();
+        else if (r == 3) { proc.setTipsOn(! proc.tipsOn()); tipsBtn.setToggleState(proc.tipsOn(), juce::dontSendNotification); applyTips(); }
+    });
+}
+
 void FxEditor::applyTips()
 {
     const bool on = proc.tipsOn();
@@ -249,6 +299,7 @@ void FxEditor::applyTips()
     presetBox.setTooltip(on ? "Factory presets (our own). Use the arrows to step through them." : juce::String());
     for (auto& pn : panels) if (pn.spBox) pn.spBox->setTooltip(on ? "Presets for this section only: they change just these controls and leave the rest as it is." : juce::String());
     randBtn.setTooltip(on ? "Set the controls to random values (output level and on/off switches are kept)." : juce::String());
+    gearBtn.setTooltip(on ? "Settings: version, link to the GitHub page for new versions" : juce::String());
     tipsBtn.setTooltip(on ? "Info bubbles: hover a control for one second to see what it does. Click to turn them off or on." : juce::String());
 }
 
@@ -280,6 +331,7 @@ void FxEditor::layoutContent()
     auto top = r.removeFromTop(kHeader);
     auto btn = [&](int w) { auto b = top.removeFromRight(w).withSizeKeepingCentre(w, 30); top.removeFromRight(8); return b; };
     tipsBtn.setBounds(btn(30));
+    gearBtn.setBounds(btn(30));
     for (auto& c : combos) if (c->isLimiter) c->tog.setBounds(btn(84));
     randBtn.setBounds(btn(96));
     if (presetBox.isVisible())

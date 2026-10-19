@@ -94,7 +94,8 @@ private:
     catfx::FxBase& proc;
     FxLaf laf;
     Content content { *this };
-    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" }, tipsBtn { "i" };
+    juce::TextButton prevBtn { "<" }, nextBtn { ">" }, randBtn { "Randomize" }, tipsBtn { "i" }, gearBtn { "" };
+    void showSettingsMenu();
     std::unique_ptr<juce::Drawable> logo;
     juce::ComboBox presetBox;
     catui::RenderGate gate { *this };

@@ -7,6 +7,7 @@ Cat Spacer is a spectral sidechain ducker. Instead of ducking the whole sound, i
 - Use Low cut and High cut to limit the range that is affected, and Max cut to set the deepest cut.
 - Use Audition to hear the sidechain as the plugin hears it, Freeze to hold the current sidechain shape.
 - Drive, Transistor and Fuzz (PurrOne colour stages, up to 150 percent) dirty the sound; the Colour menu chooses where: sound (level kept automatically), sidechain (what the ducker listens to), both, or not ducked (only the part below Low cut and above High cut, which the sidechain never touches).
+- The round gear button in the header opens Settings: the plugin version, a link to the GitHub page and the releases page (it opens your browser; the plugin itself never goes online), and a switch for the info bubbles. Hover any control for about one second to see what it does; the round i button also turns the bubbles on or off.
 
 # Recommendations
 - Lead under a vocal: Amount 50 to 70, Attack 5 to 20 ms, Release 100 to 200 ms, Low cut 150 Hz, High cut 8 kHz.
