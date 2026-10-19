@@ -9,7 +9,7 @@ FetchContent_Declare(cat_ui GIT_REPOSITORY https://github.com/SpeakingColors/cat
 FetchContent_MakeAvailable(cat_ui)
 
 juce_add_plugin(CatSpacer
-    COMPANY_NAME "SpeakingColors"
+    COMPANY_NAME "Studio 87"
     PLUGIN_MANUFACTURER_CODE Spco
     PLUGIN_CODE Cspc
     FORMATS VST3 Standalone

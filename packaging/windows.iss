@@ -3,10 +3,10 @@
 [Setup]
 AppName={#Product}
 AppVersion={#Version}
-AppPublisher=SpeakingColors
+AppPublisher=Studio 87
 AppPublisherURL=https://github.com/SpeakingColors
-DefaultDirName={autopf}\SpeakingColors\{#Product}
-DefaultGroupName=SpeakingColors
+DefaultDirName={autopf}\Studio 87\{#Product}
+DefaultGroupName=Studio 87
 OutputDir=..\Output
 OutputBaseFilename={#Name}-Setup
 LicenseFile=..\LICENSE

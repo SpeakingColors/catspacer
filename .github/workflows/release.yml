@@ -89,7 +89,7 @@ jobs:
           codesign --force --deep -s - "root/vst3/$(basename "$v")"; codesign --force --deep -s - "root/app/$(basename "$a")"
           pkgbuild --root root/vst3 --identifier "$id.vst3" --version "$ver" --install-location "/Library/Audio/Plug-Ins/VST3" vst3.pkg
           pkgbuild --root root/app --identifier "$id.app" --version "$ver" --install-location "/Applications" app.pkg
-          pkgbuild --root root/doc --identifier "$id.doc" --version "$ver" --install-location "/Library/Application Support/SpeakingColors/$PRODUCT" doc.pkg
+          pkgbuild --root root/doc --identifier "$id.doc" --version "$ver" --install-location "/Library/Application Support/Studio 87/$PRODUCT" doc.pkg
           productbuild --package vst3.pkg --package app.pkg --package doc.pkg "$NAME-macOS.pkg"
       - uses: actions/upload-artifact@v4
         with:

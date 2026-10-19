@@ -139,7 +139,7 @@ if presets:
     story.append(Paragraph(esc(", ".join(presets)), B))
 story.append(Paragraph("Install and use", H2))
 for t in ["Windows: run the installer (.exe). macOS: open the installer (.pkg or .dmg). Linux: install the Flatpak with <font name='Courier'>flatpak install --user</font> and the .flatpak file, or copy the .vst3 folder to ~/.vst3.",
-          "Everything works offline. Rescan plugins in your DAW, then look for the plugin under SpeakingColors.",
+          "Everything works offline. Rescan plugins in your DAW, then look for the plugin under Studio 87.",
           "Report problems or ideas on the GitHub page of the plugin. Free to use, copy and change under the AGPL-3.0-or-later licence."]:
     story.append(Paragraph("&bull; " + t, B))
 
@@ -149,5 +149,5 @@ def footer(c, d):
     c.setFillColor(PURPLE); c.rect(0, A4[1] - 5.8 * mm, A4[0], 0.8 * mm, stroke=0, fill=1)
     c.setFont("Helvetica", 8); c.setFillColor(DIM)
     c.drawString(20 * mm, 10 * mm, name + " manual"); c.drawRightString(190 * mm, 10 * mm, "page %d" % d.page); c.restoreState()
-SimpleDocTemplate(out, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=16 * mm, bottomMargin=18 * mm, title=name + " manual", author="SpeakingColors").build(story, onFirstPage=footer, onLaterPages=footer)
+SimpleDocTemplate(out, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=16 * mm, bottomMargin=18 * mm, title=name + " manual", author="Studio 87").build(story, onFirstPage=footer, onLaterPages=footer)
 print("wrote", out, "knobs", len(knobs), "choices", len(choices), "panels", len(panels), "presets", len(presets))
