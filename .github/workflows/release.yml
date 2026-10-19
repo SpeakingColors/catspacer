@@ -178,4 +178,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" --prerelease --title "$PRODUCT $TAG (test build)" --notes "Test build, not tuned by ear yet. Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" --clobber
+          else
+            gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" --prerelease --title "$PRODUCT $TAG (test build)" --notes "Test build, not tuned by ear yet. Free and open source ($PRODUCT). One zip: installers for Windows (.exe), macOS (.pkg), Linux (Flatpak extensions and a plain .vst3), the PDF manual and INSTALL.txt. Everything works offline. SHA-256 sums are inside the zip."
+          fi
