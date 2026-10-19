@@ -480,21 +480,22 @@ function evalCurve(cv, x) {
 }
 function bakeCurve(cv) { const t = new Float32Array(kTable + 1); for (let i = 0; i <= kTable; i++) t[i] = evalCurve(cv, i / kTable); return t; }
 const P = (x, y, c = 0) => ({ x, y, c });
-const SHAPE_NAMES = ['Pump', 'Gate', 'Swell', 'Ramp up', 'Step', 'Wave', 'Ramp down', 'V', 'Trance gate x4', 'Offbeat pump', 'Random steps', 'Tremolo'];
+const SHAPE_NAMES = ['Pump, click-free', 'Pump', 'Gate', 'Swell', 'Ramp up', 'Step', 'Wave', 'Ramp down', 'V', 'Trance gate x4', 'Offbeat pump', 'Random steps', 'Tremolo'];
 function shapeCurve(id, lo = 0, seed = 1) {
   let c = [];
   switch (id) {
-    case 0: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
-    case 1: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
-    case 2: c = [P(0, lo, -.6), P(1, 1)]; break;
-    case 3: c = [P(0, lo), P(1, 1)]; break;
-    case 4: c = [P(0, lo), P(.25, lo), P(.254, 1), P(1, 1)]; break;
-    case 5: c = [P(0, 1, .35), P(.5, lo, -.35), P(1, 1)]; break;
-    case 6: c = [P(0, 1), P(1, lo)]; break;
-    case 7: c = [P(0, 1), P(.5, lo), P(1, 1)]; break;
-    case 8: for (let i = 0; i < 4; i++) { const q = i * .25; c.push(P(q, lo), P(q + .1, lo), P(q + .104, 1), P(q + .23, 1)); } break;
-    case 9: c = [P(0, lo, .5), P(.3, 1), P(.48, 1), P(.5, lo, .5), P(.8, 1), P(1, 1)]; break;
-    case 10: { let s = (Math.imul(seed, 2654435761) + 12345) >>> 0; for (let i = 0; i < 8; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; const v = ((s >>> 8) & 0xffff) / 65535, x0 = i / 8, y = lo + (1 - lo) * v; c.push(P(x0, y), P(x0 + .1, y)); } break; }
+    case 0: c = [P(0, lo, .5), P(.45, 1), P(.97, 1), P(1, lo)]; break;
+    case 1: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
+    case 2: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
+    case 3: c = [P(0, lo, -.6), P(1, 1)]; break;
+    case 4: c = [P(0, lo), P(1, 1)]; break;
+    case 5: c = [P(0, lo), P(.25, lo), P(.254, 1), P(1, 1)]; break;
+    case 6: c = [P(0, 1, .35), P(.5, lo, -.35), P(1, 1)]; break;
+    case 7: c = [P(0, 1), P(1, lo)]; break;
+    case 8: c = [P(0, 1), P(.5, lo), P(1, 1)]; break;
+    case 9: for (let i = 0; i < 4; i++) { const q = i * .25; c.push(P(q, lo), P(q + .1, lo), P(q + .104, 1), P(q + .23, 1)); } break;
+    case 10: c = [P(0, lo, .5), P(.3, 1), P(.48, 1), P(.5, lo, .5), P(.8, 1), P(1, 1)]; break;
+    case 11: { let s = (Math.imul(seed, 2654435761) + 12345) >>> 0; for (let i = 0; i < 8; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; const v = ((s >>> 8) & 0xffff) / 65535, x0 = i / 8, y = lo + (1 - lo) * v; c.push(P(x0, y), P(x0 + .1, y)); } break; }
     default: for (let i = 0; i <= 32; i++) { const x = i / 32; c.push(P(x, lo + (1 - lo) * (.5 + .5 * Math.cos(8 * PI * x)))); }
   }
   return sanitize(c);
@@ -507,11 +508,46 @@ function flipCurve(cv) { return sanitize(cv.map(p => ({ x: p.x, y: 1 - p.y, c: -
 // ---------- DSP ----------
 const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: true, linear: false, linked: false,
   sync: true, cycleBeats: 1, hz: 2, trigger: 0, scTrigger: false, threshDb: -24, swing: 0, smooth: 4, offset: 0, offsetSamples: false,
-  drive: 0, driveType: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
+  driveTube: 0, driveTape: 0, driveSoft: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
+const LOUD_LAT = 32;
 const linTaps = s => s <= 0 ? 513 : s === 1 ? 1025 : 2049;
 const lookaheadFor = fs => Math.max(4, Math.min(560, Math.ceil(0.0015 * fs)));
-const latencyFor = (fs, linear, slope) => (linear ? (linTaps(slope) - 1) / 2 : 0) + 64 + lookaheadFor(fs);
+const latencyFor = (fs, linear, slope) => (linear ? (linTaps(slope) - 1) / 2 : 0) + 64 + LOUD_LAT + lookaheadFor(fs);
 function lrMag(f, fc, slope, high) { const n = slope <= 0 ? 2 : slope === 1 ? 4 : 8, x = Math.pow(Math.max(1e-9, f / fc), n); return high ? x / (1 + x) : 1 / (1 + x); }
+
+
+// ---------- PurrOne colour stages and LA-2A style opto (self-contained copies of the lab/C++ maths) ----------
+const dbToGain = db => Math.pow(10, db / 20), gainToDb = (g, floor = -100) => Math.max(floor, 20 * Math.log10(Math.max(g, 1e-12))), jlimit = (lo, hi, v) => Math.min(hi, Math.max(lo, v));
+const sstep = t => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
+const asymTanh = (u, nl) => u >= 0 ? Math.tanh(u) : nl * Math.tanh(u / nl);
+function purrShaper(x, drive, xs, fuzz) {
+  const dn = sstep((drive - 0.8) * 5), xn = sstep((xs - 0.8) * 5), fn = sstep((fuzz - 0.8) * 5); let y = x;
+  if (drive > 0.001) { y = Math.tanh(x * (1 + drive * 5 + dn * 30)); if (dn > 0) y += dn * (Math.tanh(y * (2 + 10 * dn)) - y); }
+  if (xs > 0.001) { const nl = Math.max(0.25, 1 - 0.3 * xs - 0.25 * xn), u = y * (1 + xs * 5 + xn * 30); y = asymTanh(u, nl); y += (0.3 * xs + 0.25 * xn) * y * y; if (xn > 0) { const y2 = asymTanh(y * (2 + 10 * xn) + 0.15 * xn, nl); y += xn * (y2 - y); } }
+  if (fuzz > 0.001) { const fz = 1 + fuzz * 14 + fn * 70, bf = 0.5 * Math.min(1, fuzz); y = Math.tanh(y * fz + bf) - Math.tanh(bf); if (fn > 0) { const r = Math.sqrt(y * y + 0.02) - 0.1414; y += fn * 0.7 * (r - 0.3); y = Math.tanh(y * (1 + 0.8 * fn)); } }
+  return y;
+}
+function purrMakeup(drive, xs, fuzz, ref) { let a = 0, b = 0; for (let i = 0; i < 64; i++) { const x = ref * Math.sin(2 * PI * i / 64); a += x * x; const y1 = purrShaper(x, drive, xs, fuzz); b += y1 * y1; } const m = b > 1e-9 ? Math.sqrt(a / b) : 1; return Math.min(4, Math.max(0.25, m)); }
+class Opto {
+  constructor() { this.gr1 = 0; this.gr2 = 0; this.mem = 0; this.env = 0; this.gr = 0; }
+  gain(peak, amount, fs) {
+    const p = jlimit(0, 1, amount), k = 1 - Math.exp(-1 / (0.0015 * fs)); this.env += k * (peak - this.env);
+    const db = gainToDb(this.env), thr = -6 - 30 * p, knee = 12, over = db - thr; let target = 0;
+    if (over > knee * 0.5) target = over * (1 - 1 / 3); else if (over > -knee * 0.5) { const t = over + knee * 0.5; target = (2 / 3) * t * t / (2 * knee); }
+    const att = 1 - Math.exp(-1 / (0.010 * fs)), rel1 = 1 - Math.exp(-1 / (0.0866 * fs)), tau2 = 1 + 4 * this.mem, rel2 = 1 - Math.exp(-1 / (tau2 * fs));
+    this.gr1 += (target > this.gr1 ? att : rel1) * (target - this.gr1); this.gr2 += (target > this.gr2 ? att : rel2) * (target - this.gr2);
+    this.mem += (1 - Math.exp(-1 / (2 * fs))) * (jlimit(0, 1, 0.5 * (this.gr1 + this.gr2) / 15) - this.mem);
+    this.gr = 0.5 * (this.gr1 + this.gr2); return dbToGain(-this.gr + 6 * p);
+  }
+}
+// Drive: six stages in series (Soft, Tape, Tube, then the PurrOne Drive, Transistor, Fuzz), each 0..1. Per stage level kept by a makeup, whole chain trimmed to the dry RMS on a 0.35 sine.
+const LOUD_OPTO = 0.6, LOUD_BOOST = Math.pow(10, 4.5 / 20), LOUD_MAXG = Math.pow(10, 12 / 20);
+function stageShape(type, d, x) { const g = 1 + 11 * d * d, kk = Math.min(1, d * 4), ref = Math.abs(driveShape(type, g * 0.35)), mk = ref > 1e-6 ? 0.35 / ref : 1; return x + kk * (mk * driveShape(type, g * x) - x); }
+function driveChain(x, d, pm) { // d = [soft, tape, tube, drive, trans, fuzz] in 0..1, pm = purr makeup
+  let y = x; if (d[0] > 0.001) y = stageShape(2, d[0], y); if (d[1] > 0.001) y = stageShape(1, d[1], y); if (d[2] > 0.001) y = stageShape(0, d[2], y);
+  if (d[3] > 0.001 || d[4] > 0.001 || d[5] > 0.001) y = purrShaper(y * 1.5, d[3], d[4], d[5]) * pm / 1.5; return y;
+}
+function driveTrim(d, pm) { let a = 0, b = 0; for (let i = 0; i < 64; i++) { const x = 0.35 * Math.sin(2 * PI * i / 64), y = driveChain(x, d, pm); a += x * x; b += y * y; } const m = b > 1e-9 ? Math.sqrt(a / b) : 1; return Math.min(4, Math.max(0.25, m)); }
 
 class Biquad {
   constructor() { this.b0 = 1; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.z1 = 0; this.z2 = 0; }
@@ -553,7 +589,7 @@ class ScaredyEngine {
     this.limBuf = [new Float64Array(1024), new Float64Array(1024)]; this.limPos = 0; this.tgt = new Float64Array(1024).fill(1); this.mins = new Float64Array(1024).fill(1); this.gRel = 1; this.limMix = 1;
     this.phase = 1; this.sinceHit = 1e12; this.e2 = 0; this.holdoff = 0; this.active = false;
     this.gs = [1, 1, 1]; this.depth = [0, 0, 0]; this.dpth = 0; this.wMix = 0; this.init = false; this.pk = [0, 0, 0]; this.pkPost = [0, 0, 0]; this.grNow = 0;
-    this.wave = new Float32Array(256); this.waveCol = 0; this.wavePk = 0;
+    this.dr = [0, 0, 0, 0, 0, 0]; this.drKey = ''; this.pm = 1; this.trim = 1; this.opto = new Opto(); this.loudM = 0; this.lein = 0; this.leout = 0; this.lg = 1; this.ovL = [new Os2(), new Os2()]; this.ldry = [new Float64Array(64), new Float64Array(64)]; this.ldPos = 0; this.wave = new Float32Array(256); this.waveCol = 0; this.wavePk = 0;
   }
   latency(p) { return latencyFor(this.fs, p.linear, p.slope); }
   updateCrossover(p) {
@@ -577,7 +613,7 @@ class ScaredyEngine {
     const lane = b => tables[p.linked || !p.multiband ? 1 : b];
     const L = [lane(0), lane(1), lane(2)], depthM = Math.min(1, Math.max(0, p.amount * 0.01)), wTarget = p.amount > 0 ? 1 : 0;
     const bandAmt = b => p.multiband ? (b === 0 ? p.amtLo : b === 1 ? p.amtMid : p.amtHi) * 0.01 : 1;
-    if (!this.init) { this.wMix = wTarget; this.dpth = p.drive; for (let b = 0; b < 3; b++) this.depth[b] = bandAmt(b) * depthM; this.init = true; }
+    if (!this.init) { this.wMix = wTarget; this.dr = [p.driveSoft, p.driveTape, p.driveTube, p.driveDrive, p.driveTrans, p.driveFuzz].map(v => v * 0.01); this.loudM = Math.min(1, Math.max(0, p.loud * 0.01)); for (let b = 0; b < 3; b++) this.depth[b] = bandAmt(b) * depthM; this.init = true; }
     const stepW = 1 / (0.02 * fs), rampN = 1 / (0.015 * fs), hostLock = p.sync && t.havePpq && t.playing && p.trigger === 0, ppqStep = bpm / 60 / fs;
     const hit = p.trigger === 1 || p.scTrigger, nb = this.nb, pol = this.pol, K = this.limBuf[0].length, kRing = 4096;
     const outL = new Float32Array(n), outR = new Float32Array(n), a = [0, 0], b2 = [0, 0], c2 = [0, 0], d2 = [0, 0];
@@ -593,13 +629,16 @@ class ScaredyEngine {
       const v = [0, 1, 2].map(k => open ? 1 : L[k][ix] + (L[k][ix + 1] - L[k][ix]) * fr);
       { const col = Math.min(255, Math.max(0, Math.floor(this.phase * 256))); if (col !== this.waveCol) { this.wave[this.waveCol] = this.wavePk; this.wavePk = 0; this.waveCol = col; } this.wavePk = Math.max(this.wavePk, Math.abs(xl), Math.abs(xr)); }
       for (let k = 0; k < 3; k++) { const tg = bandAmt(k) * depthM; this.depth[k] += Math.max(-rampN, Math.min(rampN, tg - this.depth[k])); }
-      this.dpth += Math.max(-rampN * 100, Math.min(rampN * 100, p.drive - this.dpth));
+      { const tg = [p.driveSoft, p.driveTape, p.driveTube, p.driveDrive, p.driveTrans, p.driveFuzz]; for (let k = 0; k < 6; k++) this.dr[k] += Math.max(-rampN, Math.min(rampN, Math.min(1, Math.max(0, tg[k] * 0.01)) - this.dr[k]));
+        const lt = Math.min(1, Math.max(0, p.loud * 0.01)); this.loudM += Math.max(-stepW, Math.min(stepW, lt - this.loudM)); }
       if (this.wMix < wTarget) this.wMix = Math.min(wTarget, this.wMix + stepW); else if (this.wMix > wTarget) this.wMix = Math.max(wTarget, this.wMix - stepW);
-      // drive
+      // drive: six stages in series at 2x
       let yl, yr;
-      { const d = Math.min(1, Math.max(0, this.dpth * 0.01)), g = 1 + 11 * d * d, kk = Math.min(1, d * 4), ref = Math.abs(driveShape(p.driveType, g * 0.35)), mk = ref > 1e-6 ? 0.35 / ref : 1;
+      { const dd = this.dr, active = dd.some(v => v > 0.001), key = dd.map(v => Math.round(v * 400)).join(',');
+        if (key !== this.drKey) { this.drKey = key; this.pm = purrMakeup(dd[3], dd[4], dd[5], 0.5); this.trim = active ? driveTrim(dd, this.pm) : 1; }
+        const pm = this.pm, tr = this.trim;
         this.ovD[0].up(xl, a); this.ovD[1].up(xr, b2);
-        const sh = (x, c) => { const s = mk * driveShape(p.driveType, g * x), o = x + kk * (s - x); this.dcD[c] += 0.0004 * ((o - x) - this.dcD[c]); return o - this.dcD[c]; };
+        const sh = (x, c) => { const o = driveChain(x, dd, pm) * tr; this.dcD[c] += 0.0004 * ((o - x) - this.dcD[c]); return o - this.dcD[c]; };
         const s0l = sh(a[0], 0), s0r = sh(b2[0], 1), s1l = sh(a[1], 0), s1r = sh(b2[1], 1); yl = this.ovD[0].down(s0l, s1l); yr = this.ovD[1].down(s0r, s1r); }
       // split
       const lp = this.linPos;
@@ -620,6 +659,13 @@ class ScaredyEngine {
         if (p.solo === 0 || p.solo === k + 1 || !p.multiband) { oL += bl; oR += br; }
       }
       if (!isFinite(oL) || !isFinite(oR)) { oL = oR = 0; }
+      // loudness: LA-2A style opto then a hidden soft clipper (2x), dry/wet, before the limiter
+      { const dl2 = this.ldry[0][(this.ldPos - LOUD_LAT) & 63], dr2 = this.ldry[1][(this.ldPos - LOUD_LAT) & 63]; this.ldry[0][this.ldPos & 63] = oL; this.ldry[1][this.ldPos & 63] = oR; this.ldPos = (this.ldPos + 1) & 63;
+        const og = this.opto.gain(Math.max(Math.abs(oL), Math.abs(oR)), LOUD_OPTO, fs), cc = ceilLin * 0.97, kn = 0.7 * cc, kF = 1 - Math.exp(-1 / (0.25 * fs)); this.lein += kF * ((oL * oL + oR * oR) * 0.5 - this.lein);
+        { const ri = Math.sqrt(this.lein), ro = Math.sqrt(this.leout); if (ri < 1e-4) this.lg += (1 - this.lg) * 1e-4; else this.lg = Math.min(LOUD_MAXG, Math.max(1, this.lg * Math.exp((Math.log(ri * LOUD_BOOST + 1e-9) - Math.log(ro + 1e-9)) / (0.4 * fs)))); }
+        const lgn = this.lg; this.ovL[0].up(oL * og * lgn, c2); this.ovL[1].up(oR * og * lgn, d2);
+        const wl2 = this.ovL[0].down(softClipK(c2[0], kn, cc), softClipK(c2[1], kn, cc)), wr2 = this.ovL[1].down(softClipK(d2[0], kn, cc), softClipK(d2[1], kn, cc)), m = this.loudM;
+        const fl = isFinite(wl2) ? wl2 : 0, fr = isFinite(wr2) ? wr2 : 0; this.leout += kF * ((fl * fl + fr * fr) * 0.5 - this.leout); oL = dl2 * (1 - m) + fl * m; oR = dr2 * (1 - m) + fr * m; }
       // limiter
       this.limBuf[0][this.limPos] = oL; this.limBuf[1][this.limPos] = oR; const peak = Math.max(Math.abs(oL), Math.abs(oR)); this.tgt[this.limPos] = peak > ceilLin ? ceilLin / peak : 1;
       let mn = 1; const W = this.look + 1; for (let k = 0; k < W; k++) mn = Math.min(mn, this.tgt[(this.limPos - k) & (K - 1)]); this.mins[this.limPos] = mn;
@@ -1081,21 +1127,22 @@ function evalCurve(cv, x) {
 }
 function bakeCurve(cv) { const t = new Float32Array(kTable + 1); for (let i = 0; i <= kTable; i++) t[i] = evalCurve(cv, i / kTable); return t; }
 const P = (x, y, c = 0) => ({ x, y, c });
-const SHAPE_NAMES = ['Pump', 'Gate', 'Swell', 'Ramp up', 'Step', 'Wave', 'Ramp down', 'V', 'Trance gate x4', 'Offbeat pump', 'Random steps', 'Tremolo'];
+const SHAPE_NAMES = ['Pump, click-free', 'Pump', 'Gate', 'Swell', 'Ramp up', 'Step', 'Wave', 'Ramp down', 'V', 'Trance gate x4', 'Offbeat pump', 'Random steps', 'Tremolo'];
 function shapeCurve(id, lo = 0, seed = 1) {
   let c = [];
   switch (id) {
-    case 0: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
-    case 1: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
-    case 2: c = [P(0, lo, -.6), P(1, 1)]; break;
-    case 3: c = [P(0, lo), P(1, 1)]; break;
-    case 4: c = [P(0, lo), P(.25, lo), P(.254, 1), P(1, 1)]; break;
-    case 5: c = [P(0, 1, .35), P(.5, lo, -.35), P(1, 1)]; break;
-    case 6: c = [P(0, 1), P(1, lo)]; break;
-    case 7: c = [P(0, 1), P(.5, lo), P(1, 1)]; break;
-    case 8: for (let i = 0; i < 4; i++) { const q = i * .25; c.push(P(q, lo), P(q + .1, lo), P(q + .104, 1), P(q + .23, 1)); } break;
-    case 9: c = [P(0, lo, .5), P(.3, 1), P(.48, 1), P(.5, lo, .5), P(.8, 1), P(1, 1)]; break;
-    case 10: { let s = (Math.imul(seed, 2654435761) + 12345) >>> 0; for (let i = 0; i < 8; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; const v = ((s >>> 8) & 0xffff) / 65535, x0 = i / 8, y = lo + (1 - lo) * v; c.push(P(x0, y), P(x0 + .1, y)); } break; }
+    case 0: c = [P(0, lo, .5), P(.45, 1), P(.97, 1), P(1, lo)]; break;
+    case 1: c = [P(0, lo, .5), P(.6, 1), P(1, 1)]; break;
+    case 2: c = [P(0, lo), P(.5, lo), P(.504, 1), P(1, 1)]; break;
+    case 3: c = [P(0, lo, -.6), P(1, 1)]; break;
+    case 4: c = [P(0, lo), P(1, 1)]; break;
+    case 5: c = [P(0, lo), P(.25, lo), P(.254, 1), P(1, 1)]; break;
+    case 6: c = [P(0, 1, .35), P(.5, lo, -.35), P(1, 1)]; break;
+    case 7: c = [P(0, 1), P(1, lo)]; break;
+    case 8: c = [P(0, 1), P(.5, lo), P(1, 1)]; break;
+    case 9: for (let i = 0; i < 4; i++) { const q = i * .25; c.push(P(q, lo), P(q + .1, lo), P(q + .104, 1), P(q + .23, 1)); } break;
+    case 10: c = [P(0, lo, .5), P(.3, 1), P(.48, 1), P(.5, lo, .5), P(.8, 1), P(1, 1)]; break;
+    case 11: { let s = (Math.imul(seed, 2654435761) + 12345) >>> 0; for (let i = 0; i < 8; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; const v = ((s >>> 8) & 0xffff) / 65535, x0 = i / 8, y = lo + (1 - lo) * v; c.push(P(x0, y), P(x0 + .1, y)); } break; }
     default: for (let i = 0; i <= 32; i++) { const x = i / 32; c.push(P(x, lo + (1 - lo) * (.5 + .5 * Math.cos(8 * PI * x)))); }
   }
   return sanitize(c);
@@ -1108,11 +1155,46 @@ function flipCurve(cv) { return sanitize(cv.map(p => ({ x: p.x, y: 1 - p.y, c: -
 // ---------- DSP ----------
 const SC_DEF = { amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: true, linear: false, linked: false,
   sync: true, cycleBeats: 1, hz: 2, trigger: 0, scTrigger: false, threshDb: -24, swing: 0, smooth: 4, offset: 0, offsetSamples: false,
-  drive: 0, driveType: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
+  driveTube: 0, driveTape: 0, driveSoft: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limOn: true, ceilDb: -0.3, solo: 0, bpm: 120 };
+const LOUD_LAT = 32;
 const linTaps = s => s <= 0 ? 513 : s === 1 ? 1025 : 2049;
 const lookaheadFor = fs => Math.max(4, Math.min(560, Math.ceil(0.0015 * fs)));
-const latencyFor = (fs, linear, slope) => (linear ? (linTaps(slope) - 1) / 2 : 0) + 64 + lookaheadFor(fs);
+const latencyFor = (fs, linear, slope) => (linear ? (linTaps(slope) - 1) / 2 : 0) + 64 + LOUD_LAT + lookaheadFor(fs);
 function lrMag(f, fc, slope, high) { const n = slope <= 0 ? 2 : slope === 1 ? 4 : 8, x = Math.pow(Math.max(1e-9, f / fc), n); return high ? x / (1 + x) : 1 / (1 + x); }
+
+
+// ---------- PurrOne colour stages and LA-2A style opto (self-contained copies of the lab/C++ maths) ----------
+const dbToGain = db => Math.pow(10, db / 20), gainToDb = (g, floor = -100) => Math.max(floor, 20 * Math.log10(Math.max(g, 1e-12))), jlimit = (lo, hi, v) => Math.min(hi, Math.max(lo, v));
+const sstep = t => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
+const asymTanh = (u, nl) => u >= 0 ? Math.tanh(u) : nl * Math.tanh(u / nl);
+function purrShaper(x, drive, xs, fuzz) {
+  const dn = sstep((drive - 0.8) * 5), xn = sstep((xs - 0.8) * 5), fn = sstep((fuzz - 0.8) * 5); let y = x;
+  if (drive > 0.001) { y = Math.tanh(x * (1 + drive * 5 + dn * 30)); if (dn > 0) y += dn * (Math.tanh(y * (2 + 10 * dn)) - y); }
+  if (xs > 0.001) { const nl = Math.max(0.25, 1 - 0.3 * xs - 0.25 * xn), u = y * (1 + xs * 5 + xn * 30); y = asymTanh(u, nl); y += (0.3 * xs + 0.25 * xn) * y * y; if (xn > 0) { const y2 = asymTanh(y * (2 + 10 * xn) + 0.15 * xn, nl); y += xn * (y2 - y); } }
+  if (fuzz > 0.001) { const fz = 1 + fuzz * 14 + fn * 70, bf = 0.5 * Math.min(1, fuzz); y = Math.tanh(y * fz + bf) - Math.tanh(bf); if (fn > 0) { const r = Math.sqrt(y * y + 0.02) - 0.1414; y += fn * 0.7 * (r - 0.3); y = Math.tanh(y * (1 + 0.8 * fn)); } }
+  return y;
+}
+function purrMakeup(drive, xs, fuzz, ref) { let a = 0, b = 0; for (let i = 0; i < 64; i++) { const x = ref * Math.sin(2 * PI * i / 64); a += x * x; const y1 = purrShaper(x, drive, xs, fuzz); b += y1 * y1; } const m = b > 1e-9 ? Math.sqrt(a / b) : 1; return Math.min(4, Math.max(0.25, m)); }
+class Opto {
+  constructor() { this.gr1 = 0; this.gr2 = 0; this.mem = 0; this.env = 0; this.gr = 0; }
+  gain(peak, amount, fs) {
+    const p = jlimit(0, 1, amount), k = 1 - Math.exp(-1 / (0.0015 * fs)); this.env += k * (peak - this.env);
+    const db = gainToDb(this.env), thr = -6 - 30 * p, knee = 12, over = db - thr; let target = 0;
+    if (over > knee * 0.5) target = over * (1 - 1 / 3); else if (over > -knee * 0.5) { const t = over + knee * 0.5; target = (2 / 3) * t * t / (2 * knee); }
+    const att = 1 - Math.exp(-1 / (0.010 * fs)), rel1 = 1 - Math.exp(-1 / (0.0866 * fs)), tau2 = 1 + 4 * this.mem, rel2 = 1 - Math.exp(-1 / (tau2 * fs));
+    this.gr1 += (target > this.gr1 ? att : rel1) * (target - this.gr1); this.gr2 += (target > this.gr2 ? att : rel2) * (target - this.gr2);
+    this.mem += (1 - Math.exp(-1 / (2 * fs))) * (jlimit(0, 1, 0.5 * (this.gr1 + this.gr2) / 15) - this.mem);
+    this.gr = 0.5 * (this.gr1 + this.gr2); return dbToGain(-this.gr + 6 * p);
+  }
+}
+// Drive: six stages in series (Soft, Tape, Tube, then the PurrOne Drive, Transistor, Fuzz), each 0..1. Per stage level kept by a makeup, whole chain trimmed to the dry RMS on a 0.35 sine.
+const LOUD_OPTO = 0.6, LOUD_BOOST = Math.pow(10, 4.5 / 20), LOUD_MAXG = Math.pow(10, 12 / 20);
+function stageShape(type, d, x) { const g = 1 + 11 * d * d, kk = Math.min(1, d * 4), ref = Math.abs(driveShape(type, g * 0.35)), mk = ref > 1e-6 ? 0.35 / ref : 1; return x + kk * (mk * driveShape(type, g * x) - x); }
+function driveChain(x, d, pm) { // d = [soft, tape, tube, drive, trans, fuzz] in 0..1, pm = purr makeup
+  let y = x; if (d[0] > 0.001) y = stageShape(2, d[0], y); if (d[1] > 0.001) y = stageShape(1, d[1], y); if (d[2] > 0.001) y = stageShape(0, d[2], y);
+  if (d[3] > 0.001 || d[4] > 0.001 || d[5] > 0.001) y = purrShaper(y * 1.5, d[3], d[4], d[5]) * pm / 1.5; return y;
+}
+function driveTrim(d, pm) { let a = 0, b = 0; for (let i = 0; i < 64; i++) { const x = 0.35 * Math.sin(2 * PI * i / 64), y = driveChain(x, d, pm); a += x * x; b += y * y; } const m = b > 1e-9 ? Math.sqrt(a / b) : 1; return Math.min(4, Math.max(0.25, m)); }
 
 class Biquad {
   constructor() { this.b0 = 1; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.z1 = 0; this.z2 = 0; }
@@ -1154,7 +1236,7 @@ class ScaredyEngine {
     this.limBuf = [new Float64Array(1024), new Float64Array(1024)]; this.limPos = 0; this.tgt = new Float64Array(1024).fill(1); this.mins = new Float64Array(1024).fill(1); this.gRel = 1; this.limMix = 1;
     this.phase = 1; this.sinceHit = 1e12; this.e2 = 0; this.holdoff = 0; this.active = false;
     this.gs = [1, 1, 1]; this.depth = [0, 0, 0]; this.dpth = 0; this.wMix = 0; this.init = false; this.pk = [0, 0, 0]; this.pkPost = [0, 0, 0]; this.grNow = 0;
-    this.wave = new Float32Array(256); this.waveCol = 0; this.wavePk = 0;
+    this.dr = [0, 0, 0, 0, 0, 0]; this.drKey = ''; this.pm = 1; this.trim = 1; this.opto = new Opto(); this.loudM = 0; this.lein = 0; this.leout = 0; this.lg = 1; this.ovL = [new Os2(), new Os2()]; this.ldry = [new Float64Array(64), new Float64Array(64)]; this.ldPos = 0; this.wave = new Float32Array(256); this.waveCol = 0; this.wavePk = 0;
   }
   latency(p) { return latencyFor(this.fs, p.linear, p.slope); }
   updateCrossover(p) {
@@ -1178,7 +1260,7 @@ class ScaredyEngine {
     const lane = b => tables[p.linked || !p.multiband ? 1 : b];
     const L = [lane(0), lane(1), lane(2)], depthM = Math.min(1, Math.max(0, p.amount * 0.01)), wTarget = p.amount > 0 ? 1 : 0;
     const bandAmt = b => p.multiband ? (b === 0 ? p.amtLo : b === 1 ? p.amtMid : p.amtHi) * 0.01 : 1;
-    if (!this.init) { this.wMix = wTarget; this.dpth = p.drive; for (let b = 0; b < 3; b++) this.depth[b] = bandAmt(b) * depthM; this.init = true; }
+    if (!this.init) { this.wMix = wTarget; this.dr = [p.driveSoft, p.driveTape, p.driveTube, p.driveDrive, p.driveTrans, p.driveFuzz].map(v => v * 0.01); this.loudM = Math.min(1, Math.max(0, p.loud * 0.01)); for (let b = 0; b < 3; b++) this.depth[b] = bandAmt(b) * depthM; this.init = true; }
     const stepW = 1 / (0.02 * fs), rampN = 1 / (0.015 * fs), hostLock = p.sync && t.havePpq && t.playing && p.trigger === 0, ppqStep = bpm / 60 / fs;
     const hit = p.trigger === 1 || p.scTrigger, nb = this.nb, pol = this.pol, K = this.limBuf[0].length, kRing = 4096;
     const outL = new Float32Array(n), outR = new Float32Array(n), a = [0, 0], b2 = [0, 0], c2 = [0, 0], d2 = [0, 0];
@@ -1194,13 +1276,16 @@ class ScaredyEngine {
       const v = [0, 1, 2].map(k => open ? 1 : L[k][ix] + (L[k][ix + 1] - L[k][ix]) * fr);
       { const col = Math.min(255, Math.max(0, Math.floor(this.phase * 256))); if (col !== this.waveCol) { this.wave[this.waveCol] = this.wavePk; this.wavePk = 0; this.waveCol = col; } this.wavePk = Math.max(this.wavePk, Math.abs(xl), Math.abs(xr)); }
       for (let k = 0; k < 3; k++) { const tg = bandAmt(k) * depthM; this.depth[k] += Math.max(-rampN, Math.min(rampN, tg - this.depth[k])); }
-      this.dpth += Math.max(-rampN * 100, Math.min(rampN * 100, p.drive - this.dpth));
+      { const tg = [p.driveSoft, p.driveTape, p.driveTube, p.driveDrive, p.driveTrans, p.driveFuzz]; for (let k = 0; k < 6; k++) this.dr[k] += Math.max(-rampN, Math.min(rampN, Math.min(1, Math.max(0, tg[k] * 0.01)) - this.dr[k]));
+        const lt = Math.min(1, Math.max(0, p.loud * 0.01)); this.loudM += Math.max(-stepW, Math.min(stepW, lt - this.loudM)); }
       if (this.wMix < wTarget) this.wMix = Math.min(wTarget, this.wMix + stepW); else if (this.wMix > wTarget) this.wMix = Math.max(wTarget, this.wMix - stepW);
-      // drive
+      // drive: six stages in series at 2x
       let yl, yr;
-      { const d = Math.min(1, Math.max(0, this.dpth * 0.01)), g = 1 + 11 * d * d, kk = Math.min(1, d * 4), ref = Math.abs(driveShape(p.driveType, g * 0.35)), mk = ref > 1e-6 ? 0.35 / ref : 1;
+      { const dd = this.dr, active = dd.some(v => v > 0.001), key = dd.map(v => Math.round(v * 400)).join(',');
+        if (key !== this.drKey) { this.drKey = key; this.pm = purrMakeup(dd[3], dd[4], dd[5], 0.5); this.trim = active ? driveTrim(dd, this.pm) : 1; }
+        const pm = this.pm, tr = this.trim;
         this.ovD[0].up(xl, a); this.ovD[1].up(xr, b2);
-        const sh = (x, c) => { const s = mk * driveShape(p.driveType, g * x), o = x + kk * (s - x); this.dcD[c] += 0.0004 * ((o - x) - this.dcD[c]); return o - this.dcD[c]; };
+        const sh = (x, c) => { const o = driveChain(x, dd, pm) * tr; this.dcD[c] += 0.0004 * ((o - x) - this.dcD[c]); return o - this.dcD[c]; };
         const s0l = sh(a[0], 0), s0r = sh(b2[0], 1), s1l = sh(a[1], 0), s1r = sh(b2[1], 1); yl = this.ovD[0].down(s0l, s1l); yr = this.ovD[1].down(s0r, s1r); }
       // split
       const lp = this.linPos;
@@ -1221,6 +1306,13 @@ class ScaredyEngine {
         if (p.solo === 0 || p.solo === k + 1 || !p.multiband) { oL += bl; oR += br; }
       }
       if (!isFinite(oL) || !isFinite(oR)) { oL = oR = 0; }
+      // loudness: LA-2A style opto then a hidden soft clipper (2x), dry/wet, before the limiter
+      { const dl2 = this.ldry[0][(this.ldPos - LOUD_LAT) & 63], dr2 = this.ldry[1][(this.ldPos - LOUD_LAT) & 63]; this.ldry[0][this.ldPos & 63] = oL; this.ldry[1][this.ldPos & 63] = oR; this.ldPos = (this.ldPos + 1) & 63;
+        const og = this.opto.gain(Math.max(Math.abs(oL), Math.abs(oR)), LOUD_OPTO, fs), cc = ceilLin * 0.97, kn = 0.7 * cc, kF = 1 - Math.exp(-1 / (0.25 * fs)); this.lein += kF * ((oL * oL + oR * oR) * 0.5 - this.lein);
+        { const ri = Math.sqrt(this.lein), ro = Math.sqrt(this.leout); if (ri < 1e-4) this.lg += (1 - this.lg) * 1e-4; else this.lg = Math.min(LOUD_MAXG, Math.max(1, this.lg * Math.exp((Math.log(ri * LOUD_BOOST + 1e-9) - Math.log(ro + 1e-9)) / (0.4 * fs)))); }
+        const lgn = this.lg; this.ovL[0].up(oL * og * lgn, c2); this.ovL[1].up(oR * og * lgn, d2);
+        const wl2 = this.ovL[0].down(softClipK(c2[0], kn, cc), softClipK(c2[1], kn, cc)), wr2 = this.ovL[1].down(softClipK(d2[0], kn, cc), softClipK(d2[1], kn, cc)), m = this.loudM;
+        const fl = isFinite(wl2) ? wl2 : 0, fr = isFinite(wr2) ? wr2 : 0; this.leout += kF * ((fl * fl + fr * fr) * 0.5 - this.leout); oL = dl2 * (1 - m) + fl * m; oR = dr2 * (1 - m) + fr * m; }
       // limiter
       this.limBuf[0][this.limPos] = oL; this.limBuf[1][this.limPos] = oR; const peak = Math.max(Math.abs(oL), Math.abs(oR)); this.tgt[this.limPos] = peak > ceilLin ? ceilLin / peak : 1;
       let mn = 1; const W = this.look + 1; for (let k = 0; k < W; k++) mn = Math.min(mn, this.tgt[(this.limPos - k) & (K - 1)]); this.mins[this.limPos] = mn;
@@ -1294,7 +1386,7 @@ function workerMain(self) {
         const scSrc = (m.sc && m.sc !== 'self') ? getSrc(m.sc, m.file) : x;
         const p = { amount: st.power ? st.amount : 0, amtLo: st.amtLo, amtMid: st.amtMid, amtHi: st.amtHi, xLo: st.xLo, xHi: st.xHi, slope: st.slope | 0, multiband: !!st.multiband, linear: !!st.linear, linked: !!st.linked,
           sync: !!st.sync, cycleBeats: SPD[Math.max(0, Math.min(13, st.speed | 0))], hz: st.hz, trigger: st.trigger | 0, scTrigger: !!st.sctrig, threshDb: st.thresh, swing: st.swing, smooth: st.smooth, offset: st.offset, offsetSamples: !!st.offunit,
-          drive: st.drive, driveType: st.dtype | 0, limOn: !!st.limon, ceilDb: st.ceil, solo: st.solo | 0, bpm: BPM };
+          driveTube: st.driveTube, driveTape: st.driveTape, driveSoft: st.driveSoft, driveDrive: st.driveDrive, driveTrans: st.driveTrans, driveFuzz: st.driveFuzz, loud: st.loud, limOn: !!st.limon, ceilDb: st.ceil, solo: st.solo | 0, bpm: BPM };
         const eng = new SL.ScaredyEngine(FS), lat = eng.latency(p), N = pre + n + lat + B;
         const wrap = a => { const o = new Float32Array(N), q = a.length; for (let i = 0; i < N; i++) o[i] = a[(((i - pre) % q) + q) % q]; return o; };
         const xin = wrap(x), sin = wrap(scSrc);
@@ -1551,27 +1643,32 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
     power: 'Power. Off is an exact bypass: the sound passes untouched.', prev: 'Previous preset.', next: 'Next preset.', preset: 'Factory presets, then your own (Save).',
     save: 'Save the current settings and the three envelopes as your own preset (opens the preset box under the plugin).', tips: 'Turn these hover tips on or off.',
     multi: 'Multiband on: three bands with their own envelopes. Off: one envelope for everything (the middle lane).', slope: 'How steep the split between the bands is, in dB per octave.',
-    cross: 'The three bands. Drag the white lines to move the crossovers.', amtLo: 'How much of the low band envelope is applied. 0 % leaves that band alone.', amtMid: 'How much of the mid band envelope is applied. 0 % leaves that band alone.', amtHi: 'How much of the high band envelope is applied. 0 % leaves that band alone.',
+    cross: 'The three bands. Drag the white lines (arrows) to move the crossovers, double click one to reset it.', amtLo: 'How much of the low band envelope is applied. 0 % leaves that band alone.', amtMid: 'How much of the mid band envelope is applied. 0 % leaves that band alone.', amtHi: 'How much of the high band envelope is applied. 0 % leaves that band alone.',
     solo: 'Solo: listen to this band only.', linked: 'Linked: all three bands use the same envelope, edit one and all follow.', linear: 'Linear phase split: no phase shift between the bands. Adds latency (your host compensates) and a softer low crossover.',
-    scdisp: 'What the dashed spectrum line shows: the input, the sidechain, or both.', sctrig: 'Hits on the sidechain input restart the envelope (pick a sidechain sound in the bar above).',
-    env: 'Draw the volume of each band over one cycle. Drag points, double click to add one, right click a point to delete it. Hold Alt and drag up or down to bend a segment.',
-    shapes: 'Quick shapes for the selected lane. More has trance gates, tremolo, random steps and tools.', snap: 'Points snap to the grid while you drag (hold Ctrl to move freely). Click to switch.', grid: 'Grid size for editing. Click to change.',
-    swing: 'Delays the second half of each cycle for a swung feel. Drag up or down.', specMode: 'Spectrum: the sound by frequency, dashed before the ducking and filled after. Level: peak level of each band.', spec: 'Drag the white lines to move the crossovers.',
+sctrig: 'Hits on the sidechain input restart the envelope (pick a sidechain sound in the bar above).',
+    env: 'Draw the volume of each band over one cycle. Drag points, double click to add one, right click a point to delete it. Drag a curve between two points up or down to bend it inward or outward.',
+    shapes: 'Quick shapes for the selected lane. The Shapes menu has all shapes with pictures, your own saved shapes (+ adds the current lane, - deletes one) and tools.', snap: 'Points snap to the grid while you drag (hold Ctrl to move freely). Click to switch.', grid: 'Grid size for editing. Click to change.',
+    swing: 'Delays the second half of each cycle for a swung feel. Drag up or down.', specMode: 'Spectrum: the original sound by frequency (dashed) and what the ducking removes from it (filled). Level: peak level of each band, with the dB removed.', spec: 'Drag the white lines (arrows) to move the crossovers, double click one to reset it.',
     amount: 'AMOUNT: how deep the envelopes cut. 0 % is an exact bypass, 100 % is the full depth you drew.', meters: 'Output peak meters (L, R) and the gain reduction of each band, in dB.',
     speed: 'How fast the envelope repeats: a note length in Sync mode, or Hz.', spPrev: 'Slower.', spNext: 'Faster.', sync: 'Sync follows the host tempo (150 BPM here). Hz runs at a fixed speed.',
     trig: 'Repeat: loops with the tempo. Input hit: every loud hit restarts the envelope (no tempo needed).', lock: 'Lock the envelopes so a stray click cannot change them.', thresh: 'How loud a hit must be to restart the envelope. Drag up or down.',
-    dtype: 'Drive character: Tube is warm, Tape is gentle, Soft is round.', drive: 'Smooth saturation before the ducking (oversampled). The level stays about the same, the sound gets thicker. Drag up or down.',
+    driveSoft: 'Soft: smooth, round saturation. 0 to 100 %. Works together with the other five drive knobs (they run in series, oversampled, level kept about the same).', driveTape: 'Tape: gentle, rounded compression-like saturation. Mix it with the others.', driveTube: 'Tube: warm, even harmonics. Mix it with the others.',
+    driveDrive: 'Drive (PurrOne opamp style): clean, hard push, nastier above 80 %.', driveTrans: 'Transistor (PurrOne): asymmetric, warm, thick low end and even harmonics, nastier above 80 %.', driveFuzz: 'Fuzz (PurrOne): lopsided clip with an octave-up growl above 80 %.',
+    loud: 'Loudness: a hidden LA-2A style opto and a soft clipper in front of the limiter. 0 % is off, 100 % is fully on. It lifts the loudness while the peaks stay under the ceiling; blend it in like a parallel dry/wet.',
     limon: 'Lookahead limiter after the ducking.', ceil: 'Highest level the limiter lets through. Drag up or down.', smooth: 'Rounds the envelope edges so steps do not click. Drag up or down.', offset: 'Moves the envelope later (+) or earlier (-) so the pump lines up with your kick.', offunit: 'Offset in milliseconds or in samples.',
     hz: 'Speed in cycles per second when Sync is off. Drag up or down.' };
   const TOOLS = [['Select and move points.', 'M5 3 L5 17 L9 13 L12 20 L14.5 19 L11.5 12 L17 12 Z'], ['Draw a ramp up: drag across the lane.', 'M3 17 L19 5'], ['Draw a ramp down: drag across the lane.', 'M3 5 L19 17'], ['Draw a flat hold: drag across the lane.', 'M3 11 L19 11'], ['Draw a step: hold the level, then jump.', 'M3 17 L11 17 L11 5 L19 5'],
     ['Delete the selected points (nothing selected: reset the lane).', 'M5 6 L17 6 M8 6 L8 4 L14 4 L14 6 M7 6 L8 18 L14 18 L15 6'], ['Select all points in the lane.', 'M4 4 L18 4 L18 18 L4 18 Z'], ['Move the selection (or the whole lane) one grid step left.', 'M17 11 L5 11 M10 6 L5 11 L10 16'], ['Move the selection (or the whole lane) one grid step right.', 'M5 11 L17 11 M12 6 L17 11 L12 16']];
-  const DEF = { power: 1, amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: 1, linear: 0, linked: 0, sync: 1, speed: 3, hz: 2, trigger: 0, sctrig: 0, thresh: -24, swing: 0, smooth: 4, offset: 0, offunit: 0, drive: 0, dtype: 0, limon: 1, ceil: -0.3, solo: 0, scdisp: 1, grid: 2, snap: 1, spec: 0, lock: 0 };
-  const PRE = [['Default', {}, [0, 0, 0], [0, .1, .45]], ['Hardstyle kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, drive: 12, dtype: 0 }, [0, 0, 0], [0, .05, .4]], ['Sidechain house', { amount: 85, speed: 3, slope: 1, smooth: 6 }, [0, 0, 0], [0, .15, .5]],
-    ['Trance gate 1/16', { amount: 100, speed: 3, smooth: 8 }, [8, 8, 8], [0, 0, .1]], ['Eighth-note pump', { amount: 90, speed: 3, smooth: 5 }, [9, 9, 9], [0, .1, .45]], ['UK hardcore chop', { amount: 100, speed: 4, swing: 20, drive: 25, dtype: 1, smooth: 5 }, [1, 1, 1], [0, 0, .2]],
-    ['Slow tremolo', { amount: 60, sync: 0, hz: 3.5, smooth: 20 }, [11, 11, 11], [.3, .3, .3]], ['Gentle glue', { amount: 35, speed: 3, smooth: 15 }, [0, 0, 0], [.2, .3, .5]], ['Half-time swell', { amount: 100, speed: 1, smooth: 20 }, [2, 2, 2], [0, 0, .2]],
-    ['Audio hit duck', { amount: 100, trigger: 1, sync: 0, hz: 3, thresh: -24, smooth: 5 }, [0, 0, 0], [0, .1, .4]], ['Bass-only duck', { amount: 100, amtMid: 20, amtHi: 0, speed: 3, smooth: 4 }, [0, 0, 0], [0, 0, 0]]];
+  const DEF = { power: 1, amount: 100, amtLo: 100, amtMid: 100, amtHi: 100, xLo: 120, xHi: 2400, slope: 1, multiband: 1, linear: 0, linked: 0, sync: 1, speed: 3, hz: 2, trigger: 0, sctrig: 0, thresh: -24, swing: 0, smooth: 4, offset: 0, offunit: 0, driveSoft: 0, driveTape: 0, driveTube: 0, driveDrive: 0, driveTrans: 0, driveFuzz: 0, loud: 0, limon: 1, ceil: -0.3, solo: 0, grid: 2, snap: 1, spec: 0, lock: 0 };
+  // Presets. Edit the 'Default' line to change the starting sound. Shape ids: 0 click-free pump, 1 pump, 2 gate, 3 swell, 4 ramp up, 5 step, 6 wave, 7 ramp down, 8 V, 9 trance gate x4, 10 offbeat pump, 11 random steps, 12 tremolo.
+  const PRE = [['Default', {}, [0, 0, 0], [0, 0, 0]], ['Hardstyle kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, driveTube: 12 }, [0, 0, 0], [0, .05, .4]], ['Sidechain house', { amount: 85, speed: 3, slope: 1, smooth: 6 }, [0, 0, 0], [0, .15, .5]],
+    ['Trance gate 1/16', { amount: 100, speed: 3, smooth: 8 }, [9, 9, 9], [0, 0, .1]], ['Eighth-note pump', { amount: 90, speed: 3, smooth: 5 }, [10, 10, 10], [0, .1, .45]], ['UK hardcore chop', { amount: 100, speed: 4, swing: 20, driveTape: 25, smooth: 5 }, [2, 2, 2], [0, 0, .2]],
+    ['Slow tremolo', { amount: 60, sync: 0, hz: 3.5, smooth: 20 }, [12, 12, 12], [.3, .3, .3]], ['Gentle glue', { amount: 35, speed: 3, smooth: 15 }, [0, 0, 0], [.2, .3, .5]], ['Half-time swell', { amount: 100, speed: 1, smooth: 20 }, [3, 3, 3], [0, 0, .2]],
+    ['Audio hit duck', { amount: 100, trigger: 1, sync: 0, hz: 3, thresh: -24, smooth: 5 }, [0, 0, 0], [0, .1, .4]], ['Bass-only duck', { amount: 100, amtMid: 20, amtHi: 0, speed: 3, smooth: 4 }, [0, 0, 0], [0, 0, 0]],
+    ['Purr kick pump', { amount: 100, speed: 3, slope: 2, smooth: 3, driveDrive: 30, driveTrans: 25, loud: 35 }, [0, 0, 0], [0, .05, .4]], ['Nasty chop', { amount: 100, speed: 4, swing: 15, driveFuzz: 40, driveTape: 20, smooth: 5, loud: 25 }, [2, 2, 2], [0, 0, .2]]];
   const P = { key: 'scaredy', custom: true, def: Object.assign({}, DEF), panels: [], presets: PRE.map(x => [x[0], Object.assign({ _shape: x[2], _lo: x[3] }, x[1])]) };
-  P.curves = [0, 1, 2].map(i => SL.shapeCurve(0, LOW_LEVELS[i]));
+  P.curves = [0, 1, 2].map(() => SL.shapeCurve(0, 0));
+  P.migrate = o => { if (!o || typeof o !== 'object' || !('drive' in o)) return o; const r = Object.assign({}, o), m = ['driveTube', 'driveTape', 'driveSoft'][(+o.dtype | 0)] || 'driveTube'; if (!(m in r)) r[m] = +o.drive; delete r.drive; delete r.dtype; return r; };
   plugs.scaredy = P;
   let UI = null;
   P.setCurves = cs => { P.curves = [0, 1, 2].map(i => SL.sanitize((cs[i] || cs[1] || [{ x: 0, y: 1, c: 0 }, { x: 1, y: 1, c: 0 }]).map(q => ({ x: +q.x, y: +q.y, c: +q.c })))); UI && UI.repaint(); };
@@ -1597,12 +1694,19 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
 .sc .grp{display:flex;gap:6px;align-items:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
 .sc .ro{font-size:12px;color:var(--mut);text-align:center}.sc .ro b{color:var(--fg)}
 .sc .hide{display:none}
+.sc .dk{display:flex;gap:2px;align-items:center}.sc .dk .k{flex:0 0 auto;min-width:46px}.sc .dk .k svg{width:32px;height:32px}.sc .dk .k .l{font-size:10px}.sc .dk .k .v{font-size:10px}
+.sc .pop{position:absolute;z-index:30;background:#0b0b20;border:1px solid var(--blu);border-radius:9px;padding:8px;display:none;width:min(560px,92%);max-height:420px;overflow:auto}
+.sc .pop .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}.sc .pop .tile{position:relative;background:#111130;border:1px solid var(--line);border-radius:7px;padding:3px;cursor:pointer;text-align:center;font-size:11px;color:var(--fg)}.sc .pop .tile:hover{border-color:var(--acc)}.sc .pop .tile canvas{height:40px;margin-bottom:2px;background:#05060d}
+.sc .pop .tile .del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:9px;border:1px solid var(--line);background:#2a1030;color:#fff;cursor:pointer;padding:0;line-height:14px;font-size:14px}
+.sc .pop h4{margin:8px 0 4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--blu)}
+.sc .dlgback{position:absolute;inset:0;background:rgba(5,5,20,.7);z-index:40;display:none;align-items:center;justify-content:center;border-radius:12px}.sc .dlg{background:#1c1c4a;border:1px solid var(--acc);border-radius:10px;padding:16px;max-width:360px;display:flex;flex-direction:column;gap:10px}
+.sc .dlg input{background:var(--cv);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px}
 @media (max-width:980px){.sc .grid{grid-template-columns:1fr}}`; document.head.appendChild(s); }
     box.classList.add('sc'); const top = el('div', 'top', box);
     const lg = el('span', 'logo', top); lg.innerHTML = LOGOS.scaredycat; const tt = el('b', null, top, 'Scaredy Cat'); const sub = el('small', null, top, 'ducks when the kick hits'); sub.style.cssText = 'color:var(--mut);margin-right:auto';
     const pw = el('button', 'btn', top, 'Power'); tip(pw, T.power); pw.onclick = () => { st.power = st.power ? 0 : 1; refresh(); dirty(); };
     const pv = el('button', 'btn', top, '<'), nx = el('button', 'btn', top, '>'), sel2 = el('select', null, top); tip(pv, T.prev); tip(nx, T.next); tip(sel2, T.preset); fillPresets(sel2); sel2.value = PSEL.scaredy || 'f0'; P.psel = sel2;
-    const doPreset = v => { PSEL.scaredy = v; if (v[0] === 'f') applyPreset(+v.slice(1)); else { const u = userList()[+v.slice(1)]; if (u) { applyParams(P, u.params || {}); if (u.curves) P.setCurves(u.curves); } } sel.clear(); refresh(); dirty(); };
+    const doPreset = v => { PSEL.scaredy = v; if (v[0] === 'f') applyPreset(+v.slice(1)); else { const u = userList()[+v.slice(1)]; if (u) { applyParams(P, P.migrate(u.params || {})); if (u.curves) P.setCurves(u.curves); } } sel.clear(); refresh(); dirty(); };
     sel2.onchange = () => doPreset(sel2.value); const step = d => { const o = [...sel2.options]; const i = (o.findIndex(x => x.value === sel2.value) + d + o.length) % o.length; sel2.value = o[i].value; doPreset(sel2.value); }; pv.onclick = () => step(-1); nx.onclick = () => step(1);
     const sv = el('button', 'btn', top, 'Save'); tip(sv, T.save); sv.onclick = () => { const d = $('#iod'); if (d) { d.open = true; const i = $('#io input'); if (i) { i.focus(); d.scrollIntoView({ block: 'center' }); } } };
     const ib = el('button', 'btn ibtn' + (tipsOn ? ' on' : ''), top, 'i'); tip(ib, T.tips); ib.onclick = () => { tipsOn = !tipsOn; ib.classList.toggle('on', tipsOn); tipEl.style.display = 'none'; };
@@ -1620,18 +1724,31 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
     [['amtLo', 'Low'], ['amtMid', 'Mid'], ['amtHi', 'High']].forEach(([id, n], b) => { const w = el('div', null, bands); w.style.cssText = 'flex:1;text-align:center'; const k = knob(kdef(id, n, 0, 100, 0, ' %', T[id]), st); k.style.minWidth = '0'; w.appendChild(k); knobs.push(k);
       const s = el('button', 'btn sbtn', w, 'S'); tip(s, T.solo); s.onclick = () => { st.solo = st.solo === b + 1 ? 0 : b + 1; refresh(); dirty(); }; ups.push(() => s.classList.toggle('on', st.solo === b + 1)); });
     const r2 = el('div', 'row', left); const lk = el('button', 'btn', r2); lk.style.flex = '1'; tip(lk, T.linked); lk.onclick = () => { st.linked = st.linked ? 0 : 1; if (st.linked) { P.curves = [0, 1, 2].map(() => JSON.parse(JSON.stringify(P.curves[activeLane]))); } refresh(); dirty(); }; ups.push(() => { lk.textContent = 'Envelopes: ' + (st.linked ? 'Linked' : 'Unlinked'); lk.classList.toggle('on', !!st.linked); });
-    tog(left, 'linear', 'Linear phase', T.linear); const sc = el('div', 'card', left); sc.style.background = '#161638'; el('h3', null, sc, 'Sidechain'); const r3 = el('div', 'row', sc); el('span', null, r3, 'Display').style.cssText = 'font-size:12px;color:var(--mut)'; seg(sc, 'scdisp', ['Input', 'Sidechain', 'Both'], T.scdisp); tog(sc, 'sctrig', 'Sidechain triggers envelope', T.sctrig);
+    tog(left, 'linear', 'Linear phase', T.linear); const sc = el('div', 'card', left); sc.style.background = '#161638'; el('h3', null, sc, 'Sidechain'); tog(sc, 'sctrig', 'Sidechain triggers envelope', T.sctrig);
     /* centre */
     const tr = el('div', 'row', mid); const toolBtns = TOOLS.map((t, i) => { const b = el('button', 'btn tool', tr); b.innerHTML = `<svg viewBox="0 0 22 22"><path d="${t[1]}"/></svg>`; tip(b, t[0]); b.onclick = () => { if (i < 5) { tool = i; upTools(); } else act(i); }; return b; });
     const upTools = () => toolBtns.forEach((b, i) => { if (i < 5) b.classList.toggle('on', tool === i); }); upTools(); const sp = el('span', null, tr); sp.style.flex = '1'; sp.style.minWidth = '0';
     const snapB = el('button', 'btn', tr); snapB.style.padding = '4px 8px'; tip(snapB, T.snap); snapB.onclick = () => { st.snap = st.snap ? 0 : 1; refresh(); }; ups.push(() => { snapB.textContent = 'Snap ' + (st.snap ? 'on' : 'off'); snapB.classList.toggle('on', !!st.snap); });
     const gridB = el('button', 'btn', tr); gridB.style.padding = '4px 8px'; tip(gridB, T.grid); gridB.onclick = () => { st.grid = (st.grid + 1) % 4; refresh(); }; ups.push(() => { gridB.textContent = 'Grid ' + GRIDN[st.grid]; }); chip(tr, 'swing', 'Swing', 0, 100, v => Math.round(v) + ' %', T.swing);
     const laneCv = el('canvas', null, mid); laneCv.style.height = '330px'; laneCv.style.touchAction = 'none'; tip(laneCv, T.env);
-    const shapes = el('div', 'shapes', mid); const shCv = []; for (let i = 0; i < 8; i++) { const c = el('canvas', null, shapes); shCv.push(c); c.onclick = () => applyShape(i); } const moreB = el('button', 'btn more', shapes, 'More'); tip(shapes, T.shapes);
-    const menu = el('div', 'menu', box); const mItems = [['Trance gate x4', () => applyShape(8)], ['Offbeat pump', () => applyShape(9)], ['Random steps', () => applyShape(10)], ['Tremolo', () => applyShape(11)], ['Reverse', () => op(0)], ['Flip upside down', () => op(1)], ['Copy this lane to all lanes', () => op(2)], ['Random steps (new)', () => applyShape(10, 1 + Math.floor(Math.random() * 99999))]];
-    mItems.forEach(([t, f]) => { const b = el('button', null, menu, t); b.onclick = () => { menu.style.display = 'none'; f(); }; }); moreB.onclick = e => { e.stopPropagation(); const r = moreB.getBoundingClientRect(), br = box.getBoundingClientRect(); menu.style.left = (r.left - br.left - 120) + 'px'; menu.style.top = (r.bottom - br.top + 2) + 'px'; menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; };
-    const hideMenu = () => { menu.style.display = 'none'; }; document.addEventListener('click', hideMenu);
-    const sh = el('div', 'row', mid); el('h3', null, sh, 'Band spectrum').style.flex = '1'; const lgd = el('span', null, sh, 'dashed: before ducking   filled: after'); lgd.style.cssText = 'font-size:11px;color:var(--mut)'; seg(sh, 'spec', ['Spectrum', 'Level'], T.specMode);
+    const shapes = el('div', 'shapes', mid); const shCv = []; for (let i = 0; i < 8; i++) { const c = el('canvas', null, shapes); shCv.push(c); c.onclick = () => applyShape(i); } const moreB = el('button', 'btn more', shapes, 'Shapes'); moreB.style.width = '78px'; tip(shapes, T.shapes);
+    const pop = el('div', 'pop', box), back = el('div', 'dlgback', box);
+    const SKEY = 'catfx.scshapes', getUS = () => SAFE(() => { const a = JSON.parse(localStorage.getItem(SKEY) || '[]'); return Array.isArray(a) ? a.filter(q => q && typeof q.name === 'string' && typeof q.curve === 'string').slice(0, 200) : []; }, []), setUS = a => SAFE(() => localStorage.setItem(SKEY, JSON.stringify(a)));
+    const thumb = (c, cv2) => { const d = devicePixelRatio || 1, W = 100, H = 40; c.width = W * d; c.height = H * d; const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H); g.strokeStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(4, H / 2); g.lineTo(W - 4, H / 2); g.stroke(); g.beginPath(); for (let k = 0; k <= 50; k++) { const x = k / 50, y = SL.evalCurve(cv2, x), px = 4 + x * (W - 8), py = H - 4 - y * (H - 8); k ? g.lineTo(px, py) : g.moveTo(px, py); } g.strokeStyle = BC[activeLane]; g.lineWidth = 1.8; g.stroke(); };
+    const closeDlg = () => { back.style.display = 'none'; back.innerHTML = ''; };
+    const dialog = (title, body, buttons) => { back.innerHTML = ''; const d = el('div', 'dlg', back); el('b', null, d, title); if (body) d.appendChild(body); const r = el('div', 'row', d); r.style.justifyContent = 'flex-end'; buttons.forEach(([t, f, pri]) => { const b = el('button', 'btn' + (pri ? ' on' : ''), r, t); b.onclick = f; }); back.style.display = 'flex'; return d; };
+    const confirmDelete = (name, done) => { const p = el('div', null, null, 'You are going to delete the shape "' + name + '", are you sure?'); p.style.cssText = 'font-size:13px'; dialog('Delete shape', p, [['No, keep it', closeDlg, true], ['Yes, delete', () => { closeDlg(); done(); }]]); };
+    const askName = () => { if (!P.curves[activeLane]) return; const inp = el('input'); inp.maxLength = 30; inp.placeholder = 'Shape name'; const go = () => { const nm = (inp.value || '').trim().slice(0, 30); if (!nm) return; const a = getUS().filter(q => q.name !== nm); a.push({ name: nm, curve: SL.curveToString(P.curves[activeLane]) }); setUS(a); closeDlg(); buildPop(); }; inp.onkeydown = e => { if (e.key === 'Enter') go(); }; dialog('Save this lane as a new shape', inp, [['Cancel', closeDlg], ['Save', go, true]]); setTimeout(() => inp.focus(), 30); };
+    function buildPop() { pop.innerHTML = ''; el('h4', null, pop, 'Factory shapes'); const t1 = el('div', 'tiles', pop);
+      SL.SHAPE_NAMES.forEach((nm, i) => { const t = el('div', 'tile', t1); const c = el('canvas', null, t); el('div', null, t, nm); thumb(c, SL.shapeCurve(i, 0, 3)); t.onclick = () => { pop.style.display = 'none'; applyShape(i); }; });
+      el('h4', null, pop, 'Your shapes'); const t2 = el('div', 'tiles', pop);
+      getUS().forEach(q => { const t = el('div', 'tile', t2); const c = el('canvas', null, t); el('div', null, t, q.name); thumb(c, SL.curveFromString(q.curve)); t.onclick = () => { pop.style.display = 'none'; applyCurve(SL.curveFromString(q.curve)); };
+        const del = el('button', 'del', t, '-'); del.title = 'Delete this shape'; del.onclick = e => { e.stopPropagation(); confirmDelete(q.name, () => { setUS(getUS().filter(z => z.name !== q.name)); buildPop(); }); }; });
+      const plus = el('div', 'tile', t2); const pc = el('div', null, plus, '+'); pc.style.cssText = 'font-size:28px;line-height:40px;color:var(--grn)'; el('div', null, plus, 'Save lane as shape'); plus.onclick = () => askName();
+      el('h4', null, pop, 'Tools'); const tr2 = el('div', 'row', pop); [['Reverse', () => op(0)], ['Flip upside down', () => op(1)], ['Copy this lane to all lanes', () => op(2)], ['Random steps (new)', () => applyShape(11, 1 + Math.floor(Math.random() * 99999))]].forEach(([tx, f]) => { const b = el('button', 'btn', tr2, tx); b.onclick = () => { pop.style.display = 'none'; f(); }; }); }
+    moreB.onclick = e => { e.stopPropagation(); if (pop.style.display === 'block') { pop.style.display = 'none'; return; } buildPop(); const r = moreB.getBoundingClientRect(), br = box.getBoundingClientRect(); pop.style.display = 'block'; pop.style.left = Math.max(8, Math.min(br.width - pop.offsetWidth - 8, r.right - br.left - pop.offsetWidth)) + 'px'; pop.style.top = Math.max(8, r.top - br.top - pop.offsetHeight - 4) + 'px'; };
+    pop.addEventListener('click', e => e.stopPropagation()); back.addEventListener('click', e => e.stopPropagation()); const hideMenu = () => { pop.style.display = 'none'; }; document.addEventListener('click', hideMenu);
+    const sh = el('div', 'row', mid); el('h3', null, sh, 'Band spectrum').style.flex = '1'; const lgd = el('span', null, sh, 'dashed: original   filled: removed by the ducking'); lgd.style.cssText = 'font-size:11px;color:var(--mut)'; seg(sh, 'spec', ['Spectrum', 'Level'], T.specMode);
     const specCv = el('canvas', null, mid); specCv.style.height = '110px'; tip(specCv, T.spec);
     /* right */
     el('h3', null, right, 'Amount').style.textAlign = 'center'; const ab = el('div', 'big', right); const ak = knob(kdef('amount', 'Amount', 0, 100, 0, ' %', T.amount), st); ab.appendChild(ak); ab.style.textAlign = 'center'; knobs.push(ak);
@@ -1642,13 +1759,16 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
     ups.push(() => { spv.textContent = SPD_NAMES[st.speed | 0]; spv.style.display = st.sync ? '' : 'none'; sp1.style.display = sp2.style.display = st.sync ? '' : 'none'; hzc.style.display = st.sync ? 'none' : ''; });
     const g2 = el('div', 'grp', bot, 'Trigger'); seg(g2, 'trigger', ['Repeat', 'Input hit'], T.trig); const thc = chip(g2, 'thresh', 'Hit', -60, 0, v => v.toFixed(0) + ' dB', T.thresh); ups.push(() => { thc.style.display = st.trigger ? '' : 'none'; });
     const lkB = el('button', 'btn', bot, 'Lock'); tip(lkB, T.lock); lkB.onclick = () => { st.lock = st.lock ? 0 : 1; refresh(); }; ups.push(() => { lkB.classList.toggle('on', !!st.lock); lkB.textContent = st.lock ? 'Locked' : 'Lock'; });
-    const g3 = el('div', 'grp', bot, 'Drive'); chip(g3, 'drive', '', 0, 100, v => Math.round(v) + ' %', T.drive); seg(g3, 'dtype', ['Tube', 'Tape', 'Soft'], T.dtype); const g4 = el('div', 'grp', bot, 'Limit'); tog(g4, 'limon', 'On', T.limon); chip(g4, 'ceil', '', -12, 0, v => v.toFixed(1) + ' dB', T.ceil);
+    const g4 = el('div', 'grp', bot, 'Limit'); tog(g4, 'limon', 'On', T.limon); chip(g4, 'ceil', '', -12, 0, v => v.toFixed(1) + ' dB', T.ceil); const g4b = el('div', 'grp', bot, 'Loudness'); chip(g4b, 'loud', '', 0, 100, v => Math.round(v) + ' %', T.loud);
     const g5 = el('div', 'grp', bot, 'Smooth'); chip(g5, 'smooth', '', 0, 100, v => Math.round(v) + ' %', T.smooth); const g6 = el('div', 'grp', bot, 'Offset'); chip(g6, 'offset', '', -100, 100, v => (v > 0 ? '+' : '') + v.toFixed(1), T.offset); seg(g6, 'offunit', ['MS', 'SAMPS'], T.offunit);
+    const bot2 = el('div', 'bot', box); bot2.style.marginTop = '4px'; bot2.style.paddingTop = '4px'; bot2.style.border = '0'; const g3 = el('div', 'grp', bot2, 'Drive'); const dk = el('div', 'dk', g3);
+    [['driveSoft', 'Soft'], ['driveTape', 'Tape'], ['driveTube', 'Tube'], ['driveDrive', 'Drive'], ['driveTrans', 'Trans'], ['driveFuzz', 'Fuzz']].forEach(([id, n]) => { const k = knob(kdef(id, n, 0, 100, 0, ' %', T[id]), st); dk.appendChild(k); knobs.push(k); }); const dh = el('span', null, g3, 'six stages in series, mix them freely (Drive, Trans and Fuzz are the PurrOne stages)'); dh.style.cssText = 'font-size:11px;text-transform:none;letter-spacing:0;color:var(--mut)';
     function refresh() { ups.forEach(f => f()); knobs.forEach(k => k._draw()); document.querySelectorAll('.sc .seg').forEach(() => {}); sel2.value = PSEL.scaredy || sel2.value; pw.classList.toggle('on', !!st.power); }
     /* ----- envelope editing ----- */
     const cv = () => P.curves, locked = () => !!st.lock, gdiv = () => GRIDS[st.grid | 0];
     function commit(b) { SL.sanitize(P.curves[b]); if (st.linked) P.curves = [0, 1, 2].map(() => JSON.parse(JSON.stringify(P.curves[b]))); dirty(); }
     function applyShape(id, seed = 1) { if (locked()) return; P.curves[activeLane] = SL.shapeCurve(id, LOW_LEVELS[activeLane], seed); sel.clear(); commit(activeLane); }
+    function applyCurve(c) { if (locked()) return; P.curves[activeLane] = SL.sanitize(c); sel.clear(); commit(activeLane); }
     function op(k) { if (locked()) return; const c = P.curves[activeLane]; if (k === 0) P.curves[activeLane] = SL.reverseCurve(c); else if (k === 1) P.curves[activeLane] = SL.flipCurve(c); else P.curves = [0, 1, 2].map(() => JSON.parse(JSON.stringify(c))); sel.clear(); commit(activeLane); }
     function act(i) { if (locked()) return; const c = P.curves[activeLane];
       if (i === 5) { if (!sel.size) P.curves[activeLane] = [{ x: 0, y: 1, c: 0 }, { x: 1, y: 1, c: 0 }]; else { const r = c.filter((_, k) => !sel.has(k)); P.curves[activeLane] = r.length < 2 ? [{ x: 0, y: 1, c: 0 }, { x: 1, y: 1, c: 0 }] : r; sel.clear(); } commit(activeLane); }
@@ -1666,11 +1786,13 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
       const c = P.curves[b];
       if (e.button === 2) { const i = hit(b, px, py); if (i >= 0 && c.length > 2) { c.splice(i, 1); sel.clear(); commit(b); } return; }
       if (tool === 0) { const i = hit(b, px, py);
-        if (e.altKey) { let k = 0; while (k + 1 < c.length - 1 && c[k + 1].x <= xn) k++; drag = { kind: 'bend', b, k, y0: py, c0: c[k].c, rising: c[k + 1].y > c[k].y }; return; }
+        const segAt = () => { let k = 0; while (k + 1 < c.length - 1 && c[k + 1].x <= xn) k++; return k; };
+        if (e.altKey) { const k = segAt(); drag = { kind: 'bend', b, k, y0: py, c0: c[k].c, rising: c[k + 1].y > c[k].y }; return; }
+        if (i < 0 && c.length > 1) { const k = segAt(), yc = SL.evalCurve(c, xn), py2 = r.y + r.h - yc * r.h; if (Math.abs(py - py2) < 10 && c[k + 1].y !== c[k].y) { drag = { kind: 'bend', b, k, y0: py, c0: c[k].c, rising: c[k + 1].y > c[k].y }; sel.clear(); return; } }
         if (i >= 0) { if (e.shiftKey) { sel.has(i) ? sel.delete(i) : sel.add(i); } else if (!sel.has(i)) sel = new Set([i]); drag = { kind: 'move', b, idx: [...sel], x0: xn, y0: yn, orig: c.map(q => ({ x: q.x, y: q.y })) }; }
         else { sel.clear(); } }
       else { drag = { kind: 'draw', b, x0: snapX(xn), y0: yn, base: JSON.parse(JSON.stringify(c)) }; } };
-    laneCv.onpointermove = e => { if (!drag) return; ctrl = e.ctrlKey; const [px, py] = evPos(e), b = drag.b, r = laneBox(b), xn = clamp((px - r.x) / r.w, 0, 1), yn = clamp((r.y + r.h - py) / r.h, 0, 1), c = P.curves[b];
+    laneCv.onpointermove = e => { if (!drag) { if (locked()) { laneCv.style.cursor = 'not-allowed'; return; } const [px, py] = evPos(e), b = laneOf(py), r = laneBox(b), c = P.curves[b], i = hit(b, px, py); let cur = 'default'; if (tool !== 0) cur = 'crosshair'; else if (i >= 0) cur = 'grab'; else { const xn = clamp((px - r.x) / r.w, 0, 1); let k = 0; while (k + 1 < c.length - 1 && c[k + 1].x <= xn) k++; if (c.length > 1 && Math.abs(py - (r.y + r.h - SL.evalCurve(c, xn) * r.h)) < 10 && c[k + 1] && c[k + 1].y !== c[k].y) cur = 'ns-resize'; } laneCv.style.cursor = cur; return; } ctrl = e.ctrlKey; const [px, py] = evPos(e), b = drag.b, r = laneBox(b), xn = clamp((px - r.x) / r.w, 0, 1), yn = clamp((r.y + r.h - py) / r.h, 0, 1), c = P.curves[b];
       if (drag.kind === 'bend') { c[drag.k].c = clamp(drag.c0 + (drag.rising ? -1 : 1) * (drag.y0 - py) / r.h * 1.6, -1, 1); dirty(); }
       else if (drag.kind === 'move') { const dx = xn - drag.x0, dy = yn - drag.y0; const idx = drag.idx.slice().sort((a, b2) => a - b2); idx.forEach(k => { const lo = k > 0 && !sel.has(k - 1) ? c[k - 1].x + .002 : 0, hi = k < c.length - 1 && !sel.has(k + 1) ? c[k + 1].x - .002 : 1; let nx2 = k === 0 ? 0 : k === c.length - 1 ? 1 : snapX(drag.orig[k].x + dx); c[k].x = clamp(nx2, lo, hi); c[k].y = clamp(drag.orig[k].y + dy, 0, 1); }); for (let k = 1; k < c.length; k++) if (c[k].x < c[k - 1].x + .002) c[k].x = Math.min(1, c[k - 1].x + .002); dirty(); }
       else if (drag.kind === 'draw') { const x1 = snapX(xn), xa = Math.min(drag.x0, x1), xb = Math.max(drag.x0, x1); if (xb - xa < .004) return; const ys = drag.y0, yc = yn, lo = Math.min(ys, yc), hi = Math.max(ys, yc); let pts;
@@ -1681,15 +1803,17 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
     /* crossover dragging (both graphs) */
     const fOf = (x, W, l0 = 34, r0 = 4) => 20 * Math.pow(1000, clamp((x - l0) / (W - l0 - r0), 0, 1)), xOf = (f, W, l0 = 34, r0 = 4) => l0 + (W - l0 - r0) * Math.log(f / 20) / Math.log(1000);
     function xoverDrag(cv2, l0) { let which = -1; cv2.style.touchAction = 'none'; cv2.onpointerdown = e => { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left; const d1 = Math.abs(x - xOf(st.xLo, r.width, l0)), d2 = Math.abs(x - xOf(st.xHi, r.width, l0)); which = Math.min(d1, d2) < 14 ? (d1 < d2 ? 0 : 1) : -1; if (which >= 0) cv2.setPointerCapture(e.pointerId); };
-      cv2.onpointermove = e => { if (which < 0) return; const r = cv2.getBoundingClientRect(), f = fOf(e.clientX - r.left, r.width, l0); if (which === 0) st.xLo = clamp(f, 40, Math.min(400, st.xHi * .9)); else st.xHi = clamp(f, Math.max(800, st.xLo * 1.1), 8000); dirty(); }; cv2.onpointerup = () => which = -1; }
+      cv2.ondblclick = e => { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left, d1 = Math.abs(x - xOf(st.xLo, r.width, l0)), d2 = Math.abs(x - xOf(st.xHi, r.width, l0)); if (Math.min(d1, d2) < 14) { if (d1 < d2) st.xLo = SL.SC_DEF.xLo; else st.xHi = SL.SC_DEF.xHi; dirty(); } };
+      cv2.onpointermove = e => { if (which < 0) { const r = cv2.getBoundingClientRect(), x = e.clientX - r.left; cv2.style.cursor = st.multiband && Math.min(Math.abs(x - xOf(st.xLo, r.width, l0)), Math.abs(x - xOf(st.xHi, r.width, l0))) < 14 ? 'ew-resize' : 'default'; return; } const r = cv2.getBoundingClientRect(), f = fOf(e.clientX - r.left, r.width, l0); if (which === 0) st.xLo = clamp(f, 40, Math.min(400, st.xHi * .9)); else st.xHi = clamp(f, Math.max(800, st.xLo * 1.1), 8000); dirty(); }; cv2.onpointerup = () => which = -1; }
     xoverDrag(crossCv, 34); xoverDrag(specCv, 34);
     /* ----- drawing ----- */
     const fit = c => { const r = c.getBoundingClientRect(), d = devicePixelRatio || 1; const w = Math.max(10, Math.round(r.width * d)), h = Math.max(10, Math.round(r.height * d)); if (c.width !== w || c.height !== h) { c.width = w; c.height = h; } const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); return [g, r.width, r.height]; };
     const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+    const arrows = (g, x, y) => { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x - 9, y - 5); g.lineTo(x - 9, y + 5); g.closePath(); g.moveTo(x + 3, y); g.lineTo(x + 9, y - 5); g.lineTo(x + 9, y + 5); g.closePath(); g.fill(); g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1; g.stroke(); };
     function bandX(g, W, Hh, l0, mode) { /* draws shaded band magnitude responses on a freq axis, returns R */ const R = { x: l0, y: 6, w: W - l0 - 4, h: Hh - 20 }; dbAxis(g, R, -36, 0, 12); freqAxis(g, R); const multi = st.multiband;
       for (let b = 0; b < 3; b++) { if (!multi && b !== 1) continue; g.beginPath(); let first = true; for (let x = 0; x <= R.w; x += 2) { const f = 20 * Math.pow(1000, x / R.w); const m = !multi ? 1 : b === 0 ? SL.lrMag(f, st.xLo, st.slope, false) : b === 1 ? SL.lrMag(f, st.xLo, st.slope, true) * SL.lrMag(f, st.xHi, st.slope, false) : SL.lrMag(f, st.xHi, st.slope, true); const db = clamp(20 * Math.log10(Math.max(1e-6, m)), -36, 0), y = R.y + R.h - (db + 36) / 36 * R.h; first ? g.moveTo(R.x + x, y) : g.lineTo(R.x + x, y); first = false; }
         g.strokeStyle = BC[b]; g.lineWidth = 1.6; g.stroke(); g.lineTo(R.x + R.w, R.y + R.h); g.lineTo(R.x, R.y + R.h); g.closePath(); g.fillStyle = hexA(BC[b], .25); g.fill(); }
-      if (multi) { g.strokeStyle = '#fff'; g.lineWidth = 1.2; [st.xLo, st.xHi].forEach(f => { const x = xOf(f, W, l0); g.beginPath(); g.moveTo(x, R.y); g.lineTo(x, R.y + R.h); g.stroke(); g.fillStyle = '#fff'; g.font = '10px sans-serif'; g.textAlign = 'left'; g.fillText(f >= 1000 ? (f / 1000).toFixed(1) + 'k' : Math.round(f) + ' Hz', x + 3, R.y + 11); }); } return R; }
+      if (multi) { g.strokeStyle = '#fff'; g.lineWidth = 1.2; [st.xLo, st.xHi].forEach(f => { const x = xOf(f, W, l0); g.beginPath(); g.moveTo(x, R.y); g.lineTo(x, R.y + R.h); g.stroke(); g.fillStyle = '#fff'; g.font = '10px sans-serif'; g.textAlign = 'left'; g.fillText(f >= 1000 ? (f / 1000).toFixed(1) + 'k' : Math.round(f) + ' Hz', x + 11, R.y + 11); arrows(g, x, R.y + R.h * 0.5); }); } return R; }
     const meterOf = (R, t) => { const E = R && R.extra && R.extra.scaredy; return E ? { E, i: clamp(Math.floor(t * FS / E.B), 0, E.gr[0].length - 1) } : null; };
     let foldKey = null, fold = null;
     function drawLanes(t) { const [g, W, Hh] = fit(laneCv); lw = W; lh = Hh; g.clearRect(0, 0, W, Hh); const R0 = RES.scaredy, M = meterOf(R0, t);
@@ -1708,11 +1832,11 @@ const blkAt = (arr, t, B) => arr ? arr[Math.min(arr.length - 1, Math.floor(t * F
     function drawCross() { const [g, W, Hh] = fit(crossCv); g.clearRect(0, 0, W, Hh); bandX(g, W, Hh, 34); }
     function drawSpec(t) { const [g, W, Hh] = fit(specCv); g.clearRect(0, 0, W, Hh); const M = meterOf(RES.scaredy, t); const R = { x: 34, y: 6, w: W - 38, h: Hh - 20 };
       if (st.spec === 0) { freqAxis(g, R); dbAxis(g, R, -120, -30, 30); const E = M && M.E; if (E) { const f = clamp(Math.floor(t / (E.phase.length * E.B / FS) * (E.NF - 1)), 0, E.NF - 1), I = E.spIn[f], O = E.spOut[f]; const Y = d => R.y + R.h - clamp((d + 120) / 90, 0, 1) * R.h, XX = b => R.x + R.w * (b + .5) / E.NB;
-          for (let b = 0; b < 3; b++) { const f0 = b === 0 ? 0 : b === 1 ? st.xLo : st.xHi, f1 = b === 0 ? st.xLo : b === 1 ? st.xHi : 20000; g.save(); g.beginPath(); g.rect(Math.max(R.x, xOf(Math.max(20, f0), W, 34)), R.y, (st.multiband ? xOf(f1, W, 34) : R.x + R.w) - Math.max(R.x, xOf(Math.max(20, f0), W, 34)), R.h); g.clip(); if (!st.multiband && b !== 1) { g.restore(); continue; }
-            g.beginPath(); for (let k = 0; k < E.NB; k++) k ? g.lineTo(XX(k), Y(O[k])) : g.moveTo(XX(k), Y(O[k])); g.lineTo(XX(E.NB - 1), R.y + R.h); g.lineTo(XX(0), R.y + R.h); g.closePath(); g.fillStyle = hexA(BC[b], .5); g.fill(); g.restore(); }
-          g.beginPath(); for (let k = 0; k < E.NB; k++) k ? g.lineTo(XX(k), Y(I[k])) : g.moveTo(XX(k), Y(I[k])); g.setLineDash([4, 3]); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.2; g.stroke(); g.setLineDash([]); } }
-      else { dbAxis(g, R, -60, 0, 12); const E = M && M.E; for (let b = 0; b < 3; b++) { const bw = R.w / 3, x = R.x + bw * b + bw * .15; if (E) { const pre = dB(E.pk[b][M.i]), post = dB(E.pp[b][M.i]), Y = d => R.y + R.h - clamp((d + 60) / 60, 0, 1) * R.h; g.fillStyle = 'rgba(160,170,200,.35)'; g.fillRect(x, Y(pre), bw * .7, R.y + R.h - Y(pre)); g.fillStyle = BC[b]; g.fillRect(x + bw * .2, Y(post), bw * .3, R.y + R.h - Y(post)); g.fillStyle = '#fff'; g.font = '10px sans-serif'; g.textAlign = 'center'; g.fillText(BN[b] + ' ' + post.toFixed(1) + ' dB', x + bw * .35, R.y + 11); } } }
-      if (st.multiband) { g.strokeStyle = '#fff'; g.lineWidth = 1.2; [st.xLo, st.xHi].forEach(f => { const x = xOf(f, W, 34); g.beginPath(); g.moveTo(x, R.y); g.lineTo(x, R.y + R.h); g.stroke(); }); } }
+          for (let b = 0; b < 3; b++) { const f0 = b === 0 ? 0 : b === 1 ? st.xLo : st.xHi, f1 = b === 0 ? st.xLo : b === 1 ? st.xHi : 20000; if (!st.multiband && b !== 1) continue; const xa = st.multiband ? Math.max(R.x, xOf(Math.max(20, f0), W, 34)) : R.x, xb = st.multiband ? xOf(f1, W, 34) : R.x + R.w; g.save(); g.beginPath(); g.rect(xa, R.y, xb - xa, R.h); g.clip();
+            g.beginPath(); for (let k = 0; k < E.NB; k++) k ? g.lineTo(XX(k), Y(I[k])) : g.moveTo(XX(k), Y(I[k])); for (let k = E.NB - 1; k >= 0; k--) g.lineTo(XX(k), Y(Math.min(I[k], O[k]))); g.closePath(); g.fillStyle = hexA(BC[b], .6); g.fill(); g.restore(); }
+          g.beginPath(); for (let k = 0; k < E.NB; k++) k ? g.lineTo(XX(k), Y(I[k])) : g.moveTo(XX(k), Y(I[k])); g.setLineDash([4, 3]); g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.2; g.stroke(); g.setLineDash([]); } }
+      else { dbAxis(g, R, -60, 0, 12); const E = M && M.E; for (let b = 0; b < 3; b++) { const bw = R.w / 3, x = R.x + bw * b + bw * .15; if (E) { const pre = dB(E.pk[b][M.i]), post = dB(E.pp[b][M.i]), Y = d => R.y + R.h - clamp((d + 60) / 60, 0, 1) * R.h; g.fillStyle = 'rgba(160,170,200,.35)'; g.fillRect(x, Y(pre), bw * .7, R.y + R.h - Y(pre)); g.fillStyle = BC[b]; g.fillRect(x + bw * .2, Y(post), bw * .3, R.y + R.h - Y(post)); g.fillStyle = '#fff'; g.font = '10px sans-serif'; g.textAlign = 'center'; g.fillText(BN[b] + ' -' + Math.max(0, pre - post).toFixed(1) + ' dB removed', x + bw * .35, R.y + 11); } } }
+      if (st.multiband) { g.strokeStyle = '#fff'; g.lineWidth = 1.2; [st.xLo, st.xHi].forEach(f => { const x = xOf(f, W, 34); g.beginPath(); g.moveTo(x, R.y); g.lineTo(x, R.y + R.h); g.stroke(); arrows(g, x, R.y + R.h * 0.5); }); } }
     function drawMeters(t, c) { const [g, W, Hh] = fit(mCv); g.clearRect(0, 0, W, Hh); const R0 = RES.scaredy, M = meterOf(R0, t), top = 18, bot = Hh - 30, h = bot - top; const yDb = d => bot - clamp((d + 60) / 60, 0, 1) * h; g.font = '10px sans-serif'; g.textAlign = 'right'; g.fillStyle = css('--grn');
       [0, -6, -12, -24, -48].forEach(d => { g.fillText(d, 28, yDb(d) + 3); g.strokeStyle = 'rgba(255,255,255,.15)'; g.beginPath(); g.moveTo(30, yDb(d)); g.lineTo(W, yDb(d)); g.stroke(); });
       const lv = dB(c.o); [0, 1].forEach(i => { const x = 34 + i * 22; g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x, top, 16, h); g.fillStyle = lv > -1 ? css('--red') : lv > -9 ? css('--acc') : css('--grn'); g.fillRect(x, yDb(lv), 16, bot - yDb(lv)); g.fillStyle = css('--grn'); g.textAlign = 'center'; g.font = 'bold 10px sans-serif'; g.fillText(i ? 'R' : 'L', x + 8, 12); });
@@ -1826,7 +1950,7 @@ function refreshAll() { const pp = plugs[cur]; if (pp && pp.refresh) pp.refresh(
 const userKey = 'catfx.presets';
 function userList() { return SAFE(() => (JSON.parse(localStorage.getItem(userKey) || '{}')[cur] || []), []); }
 function userSave(list) { SAFE(() => { const o = JSON.parse(localStorage.getItem(userKey) || '{}'); o[cur] = list; localStorage.setItem(userKey, JSON.stringify(o)); }); }
-function applyParams(p, obj) { Object.assign(p.st, p.def); for (const k in obj) if (k in p.def && Number.isFinite(+obj[k])) p.st[k] = +obj[k]; }
+function applyParams(p, obj) { if (p.migrate) obj = p.migrate(obj); Object.assign(p.st, p.def); for (const k in obj) if (k in p.def && Number.isFinite(+obj[k])) p.st[k] = +obj[k]; }
 function fillPresets(sel) { const p = plugs[cur]; let h = p.presets.map((x, i) => `<option value="f${i}">${x[0]}</option>`).join(''); const u = userList(); if (u.length) h += '<optgroup label="My presets">' + u.map((x, i) => `<option value="u${i}">${x.name.replace(/[<&>"]/g, '')}</option>`).join('') + '</optgroup>'; sel.innerHTML = h; }
 let PSEL = {};
 function show(key) {
