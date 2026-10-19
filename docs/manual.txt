@@ -3,12 +3,14 @@ Cat Spacer is a spectral sidechain ducker. Instead of ducking the whole sound, i
 
 # Quick start
 - Put Cat Spacer on the sound you want to carve (a lead or pad) and route the sound that should stay clear (vocal, kick) to its sidechain input in your DAW.
-- Raise Amount until the gaps appear in the display; the cut curve shows what is being removed.
+- Raise Amount until the gaps appear in the display; the cut curve shows what is being removed. At 0 nothing is ducked; low settings carve only the bands where the sidechain is loud; towards 100 it becomes a full pump that ducks everything on every hit.
 - Use Low cut and High cut to limit the range that is affected, and Max cut to set the deepest cut.
-- Use Audition to hear only what is being removed, Freeze to hold the current sidechain shape.
+- Use Audition to hear the sidechain as the plugin hears it, Freeze to hold the current sidechain shape.
+- Drive, Transistor and Fuzz (PurrOne colour stages, up to 150 percent) dirty the sound; the Colour menu chooses where: sound (level kept automatically), sidechain (what the ducker listens to), both, or not ducked (only the part below Low cut and above High cut, which the sidechain never touches).
 
 # Recommendations
 - Lead under a vocal: Amount 50 to 70, Attack 5 to 20 ms, Release 100 to 200 ms, Low cut 150 Hz, High cut 8 kHz.
 - Pad under a kick: Release shorter (60 to 120 ms), Max cut 8 to 12 dB.
 - Keep Floor above 0 if the carving sounds hollow; lower Mix to blend with the untouched sound.
-- Latency: Low 512, Normal 1024, High 2048 samples. Use Low while playing live, High for the cleanest cut when mixing.
+- Pumping: Amount 100, Attack 5 ms, Release 200 ms, then shorten or lengthen Release to the tempo.
+- Latency: Ultra 256, Low 512, Normal 1024, High 2048 samples plus a few samples for the colour stage; the host compensates. Use Low while playing live, High for the cleanest cut when mixing.
