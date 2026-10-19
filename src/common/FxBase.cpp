@@ -18,7 +18,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FxBase::makeLayout(const std
     {
         juce::NormalisableRange<float> r(s.lo, s.hi);
         if (s.centre > 0.f) r.setSkewForCentre(s.centre);
-        p.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{s.id, 1}, s.name, r, s.def));
+        p.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{s.id, 1}, s.name, r, s.def,
+            juce::AudioParameterFloatAttributes().withStringFromValueFunction([s](float v, int) { return fmtKnob(s, v); })
+                                                 .withValueFromStringFunction([s](const juce::String& t) { return juce::jlimit(s.lo, s.hi, t.getFloatValue()); })));
     }
     for (auto& s : c)
         p.push_back(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{s.id, 1}, s.name, s.items, s.def));

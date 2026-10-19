@@ -5,6 +5,20 @@
 namespace catfx
 {
 struct KnobSpec { juce::String id, name, suffix; float lo, hi, def, centre = 0.f; juce::String tip = {}; };
+// Text shown under a knob: unit and sensible decimals (80 Hz, -12.0 dB, 50 %, 0.80), never long raw numbers.
+inline juce::String fmtKnob(const KnobSpec& k, float v)
+{
+    const auto u = k.suffix.trim().toLowerCase(); const float range = k.hi - k.lo;
+    int dec = 0;
+    if (u == "db") dec = 1;
+    else if (u == "hz" || u == "%") dec = 0;
+    else if (u == "ms" || u == "s") dec = k.hi <= 20.f ? 1 : 0;
+    else if (u.isEmpty()) dec = range <= 1.01f ? 2 : range <= 30.f ? 1 : 0;
+    else dec = range <= 30.f ? 1 : 0;
+    auto t = juce::String(v, dec);
+    if (t.containsOnly("-0.")) t = juce::String(0.0f, dec);   // no "-0.0"
+    return t + k.suffix;
+}
 struct ChoiceSpec { juce::String id, name; juce::StringArray items; int def = 0; juce::String tip = {}; };
 // A panel groups one display with the controls that drive it (controls are drawn underneath it).
 // A preset that changes only the controls of one panel (the editor shows it as a menu under that panel)
