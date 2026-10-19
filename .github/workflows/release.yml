@@ -12,7 +12,7 @@ on:
         required: false
         default: ''
 permissions:
-  contents: write
+  contents: read
 env:
   TAGIN: ${{ inputs.tag }}
   NAME: CatSpacer
@@ -44,7 +44,7 @@ jobs:
           path: "manual"
       - name: Build
         run: |
-          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*.[0-9]*.[0-9]*) sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; if echo "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak; fi
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release --parallel 4
       - name: Stage files
@@ -57,7 +57,7 @@ jobs:
           cp manual/*.pdf "stage/$NAME-manual.pdf"
       - name: Installer (Inno Setup)
         run: |
-          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; echo "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || ver=0.0.1
           iscc="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
           [ -f "$iscc" ] || { choco install innosetup -y --no-progress; }
           "$iscc" "//DName=$NAME" "//DProduct=$PRODUCT" "//DVersion=$ver" packaging/windows.iss
@@ -77,12 +77,12 @@ jobs:
           path: "manual"
       - name: Build (universal)
         run: |
-          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*.[0-9]*.[0-9]*) sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; if echo "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak; fi
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
           cmake --build build --config Release --parallel 4
       - name: Installer (.pkg)
         run: |
-          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*) ;; *) ver=0.0.1;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; echo "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || ver=0.0.1
           id="io.github.speakingcolors.$(echo "$NAME" | tr 'A-Z' 'a-z')"
           v=$(find build -type d -name "*.vst3" | head -1); a=$(find build -type d -name "*.app" | head -1)
           echo "VST3: $v  APP: $a"
@@ -105,7 +105,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libxrandr-dev libxcursor-dev libxcomposite-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
-          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; case "$ver" in [0-9]*.[0-9]*.[0-9]*) sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak;; esac
+          ver="${TAGIN:-$GITHUB_REF_NAME}"; ver="${ver#v}"; if echo "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then sed -i.bak -E "s/^(project\([A-Za-z0-9_]+ VERSION )[0-9.]+/\1$ver/" CMakeLists.txt; rm -f CMakeLists.txt.bak; fi
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel 4
           v=$(find build -type d -name "*.vst3" | head -1); echo "VST3: $v"
@@ -149,6 +149,8 @@ jobs:
           path: "out/*"
 
   package:
+    permissions:
+      contents: write
     needs: [manual, windows, macos, linux-native, linux-flatpak]
     runs-on: ubuntu-latest
     steps:
