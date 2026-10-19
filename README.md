@@ -13,7 +13,7 @@ Free, open source spectral sidechain ducker for Linux (VST3 and standalone). The
 - Audition (hear the filtered sidechain); uses the main signal as sidechain if none is connected
 
 ## Status
-Early scaffold. It builds in CI (Linux VST3 and standalone) but has not been tuned by ear yet. Free and open source. Donations welcome (link coming).
+Early scaffold. It builds in CI (Linux VST3 and standalone) but has not been tuned by ear yet. Free and open source. Donations welcome: https://ko-fi.com/studio87
 
 ## Docs
 - [Roadmap](ROADMAP.md)
