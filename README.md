@@ -4,6 +4,8 @@
 
 Free, open source spectral sidechain ducker for Linux (VST3 and standalone). The sidechain's spectrum carves matching gaps in the main signal so a lead and a vocal or kick can share the mix.
 
+**Manual:** [PDF with interface tour, opens in the browser](https://github.com/SpeakingColors/catspacer/blob/main/docs/CatSpacer-manual.pdf)
+
 ## Features
 - 64 bands (30 Hz to 20 kHz; Trackspacer is documented as 32), STFT, no threshold needed: it follows the loudest sidechain band and ducks the bands that are prominent
 - Amount, Low cut, High cut, Attack, Release, Pan, L/R or M/S, Freeze (holds the sidechain curve), Max cut, Floor, Mix
