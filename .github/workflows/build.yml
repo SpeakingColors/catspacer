@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -27,6 +27,30 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release  2>&1 | tee -a ci.log; exit ${PIPESTATUS[0]}
       - name: Build
         run: cmake --build build --config Release --parallel 4 2>&1 | tee -a ci.log; exit ${PIPESTATUS[0]}
+      - name: Validate with pluginval
+        continue-on-error: true
+        run: |
+          set -x
+          case "$RUNNER_OS" in
+            Linux)   url=pluginval_Linux.zip;   bin=./pluginval ;;
+            macOS)   url=pluginval_macOS.zip;   bin=./pluginval.app/Contents/MacOS/pluginval ;;
+            Windows) url=pluginval_Windows.zip; bin=./pluginval.exe ;;
+          esac
+          mkdir -p pv reports && cd pv
+          curl -sSL -o pv.zip "https://github.com/Tracktion/pluginval/releases/latest/download/$url" && unzip -q pv.zip
+          cd ..
+          rc=0
+          for p in $(find build -name '*.vst3' -maxdepth 6 | sort -u); do
+            "pv/${bin#./}" --strictness-level 5 --skip-gui-tests --output-dir reports --junit-xml "reports/$(basename "$p").xml" "$p" || rc=1
+          done
+          exit $rc
+      - name: Upload pluginval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pluginval-${{ runner.os }}
+          path: reports/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: CatSpacer-${{ runner.os }}
