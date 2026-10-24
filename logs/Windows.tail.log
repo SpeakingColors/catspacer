@@ -1,0 +1,129 @@
+-- Building for: Visual Studio 18 2026
+-- The C compiler identification is MSVC 19.51.36260.0
+-- The CXX compiler identification is MSVC 19.51.36260.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+CMake Warning at build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:1769 (message):
+  Target CatSpacer has JUCE_BUNDLE_ID 'com.Studio 87.CatSpacer', which
+  contains spaces.  Use the BUNDLE_ID option to specify a valid ID.
+Call Stack (most recent call first):
+  build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:2165 (_juce_set_fallback_properties)
+  build/_deps/juce-src/extras/Build/CMake/JUCEUtils.cmake:2248 (_juce_initialise_target)
+  CMakeLists.txt:11 (juce_add_plugin)
+
+
+-- Configuring done (133.3s)
+-- Generating done (0.1s)
+CMake Warning (unused-cli):
+  Manually-specified variables were not used by the project:
+
+    CMAKE_BUILD_TYPE
+
+
+-- Build files have been written to: D:/a/catspacer/catspacer/build
+MSBuild version 18.11.1-1.26513.3+940033be3 for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Generating CatSpacer_artefacts/JuceLibraryCode/CatSpacer_resources.rc
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
+  Building VST3 manifest helper for CatSpacer
+  CatSpacer_rc_lib.vcxproj -> D:\a\catspacer\catspacer\build\CatSpacer_rc_lib.dir\Release\CatSpacer_rc_lib.lib
+  -- The CXX compiler identification is MSVC 19.51.36260.0
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Configuring done (2.0s)
+  -- Generating done (0.0s)
+  -- Build files have been written to: D:/a/catspacer/catspacer/build/vst3_helpers/CatSpacer
+  MSBuild version 18.11.1-1.26513.3+940033be3 for .NET Framework
+  
+    1>Checking Build System
+    Building Custom Rule D:/a/catspacer/catspacer/build/_deps/juce-src/extras/Build/CMake/juce_vst3_helper/CMakeLists.txt
+    juce_VST3ManifestHelper.cpp
+    vst3_helper.vcxproj -> D:\a\catspacer\catspacer\build\vst3_helpers\CatSpacer\vst3_helper.exe
+    Building Custom Rule D:/a/catspacer/catspacer/build/_deps/juce-src/extras/Build/CMake/juce_vst3_helper/CMakeLists.txt
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
+  Building Custom Rule D:/a/catspacer/catspacer/build/_deps/cat_ui-src/CMakeLists.txt
+  CatLookAndFeel.cpp
+  CatFrame.cpp
+  juce_gui_basics.cpp
+  juce_gui_basics_2.cpp
+  juce_gui_basics_3.cpp
+  juce_gui_basics_4.cpp
+  juce_gui_basics_5.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_graphics_Sheenbidi.c
+  cat_ui.vcxproj -> D:\a\catspacer\catspacer\build\_deps\cat_ui-build\Release\cat_ui.lib
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
+  FxBase.cpp
+  FxEditor.cpp
+  Plugins.cpp
+  CatDucker.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_gui_basics_2.cpp
+  juce_gui_basics_3.cpp
+  juce_gui_basics_4.cpp
+  juce_gui_basics_5.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_audio_basics.cpp
+  juce_audio_utils.cpp
+  juce_audio_formats.cpp
+  juce_audio_devices.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  CatSpacer.vcxproj -> D:\a\catspacer\catspacer\build\CatSpacer_artefacts\Release\Cat Spacer_SharedCode.lib
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+     Creating library D:/a/catspacer/catspacer/build/CatSpacer_artefacts/Release/VST3/Cat Spacer.lib and object D:/a/catspacer/catspacer/build/CatSpacer_artefacts/Release/VST3/Cat Spacer.exp
+  CatSpacer_VST3.vcxproj -> D:\a\catspacer\catspacer\build\CatSpacer_artefacts\Release\VST3\Cat Spacer.vst3\Contents\x86_64-win\Cat Spacer.vst3
+  removing moduleinfo.json
+  creating D:/a/catspacer/catspacer/build/CatSpacer_artefacts/Release/VST3/Cat Spacer.vst3/Contents/Resources/moduleinfo.json
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+  CatSpacer_Standalone.vcxproj -> D:\a\catspacer\catspacer\build\CatSpacer_artefacts\Release\Standalone\Cat Spacer.exe
+  Building Custom Rule D:/a/catspacer/catspacer/CMakeLists.txt
