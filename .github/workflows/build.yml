@@ -6,8 +6,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +32,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel 4 2>&1 | tee -a ci.log; exit ${PIPESTATUS[0]}
       - name: Validate with pluginval
+        timeout-minutes: 15
         continue-on-error: true
         run: |
           set -x
