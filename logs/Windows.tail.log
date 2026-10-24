@@ -25,7 +25,7 @@ Call Stack (most recent call first):
   CMakeLists.txt:11 (juce_add_plugin)
 
 
--- Configuring done (143.0s)
+-- Configuring done (126.3s)
 -- Generating done (0.1s)
 CMake Warning (unused-cli):
   Manually-specified variables were not used by the project:
@@ -48,7 +48,7 @@ MSBuild version 18.11.1-1.26513.3+940033be3 for .NET Framework
   -- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe - skipped
   -- Detecting CXX compile features
   -- Detecting CXX compile features - done
-  -- Configuring done (2.0s)
+  -- Configuring done (1.9s)
   -- Generating done (0.0s)
   -- Build files have been written to: D:/a/catspacer/catspacer/build/vst3_helpers/CatSpacer
   MSBuild version 18.11.1-1.26513.3+940033be3 for .NET Framework
