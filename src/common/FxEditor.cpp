@@ -254,6 +254,8 @@ FxEditor::FxEditor(catfx::FxBase& p) : AudioProcessorEditor(&p), proc(p), viz(p)
     applyNasty(); lastNasty = proc.nastyOn();
     gate.onFrame = [this] { const bool nn = proc.nastyOn(); if (nn != lastNasty) { lastNasty = nn; applyNasty(); } if (panelMode) for (auto& pn : panels) pn.view->repaint(); else viz.repaint(); }; // stops while hidden or in the background
     gate.start(30);
+    if (const char* dumpPath = std::getenv("CAT_TOUR_DUMP"))   // documentation tool, never set for users
+        juce::Timer::callAfterDelay(7000, [sp = juce::Component::SafePointer<FxEditor>(this), path = juce::String(dumpPath)] { if (sp != nullptr) sp->dumpTour(juce::File(path)); });
 }
 
 void FxEditor::resized()
@@ -427,4 +429,37 @@ void FxEditor::layoutContent()
         knobs[(size_t) i]->l.setBounds(c.removeFromTop(14));
         knobs[(size_t) i]->s.setBounds(c);
     }
+}
+
+void FxEditor::dumpTour(const juce::File& out)
+{
+    auto rect = [this](juce::Component& comp) {
+        auto r = getLocalArea(&comp, comp.getLocalBounds());
+        auto* o = new juce::DynamicObject(); o->setProperty("x", r.getX()); o->setProperty("y", r.getY()); o->setProperty("w", r.getWidth()); o->setProperty("h", r.getHeight());
+        return juce::var(o); };
+    auto item = [&](const juce::String& kind, const juce::String& name, const juce::String& tip, const juce::String& value, juce::Component& comp) {
+        auto* o = new juce::DynamicObject(); o->setProperty("kind", kind); o->setProperty("name", name); o->setProperty("tip", tip); o->setProperty("value", value); o->setProperty("box", rect(comp));
+        return juce::var(o); };
+    juce::Array<juce::var> top, pans;
+    top.add(item("menu", "Presets", "Factory presets (our own). Use the arrows to step through them.", presetBox.getText(), presetBox));
+    top.add(item("button", "Randomize", randBtn.getTooltip(), "", randBtn));
+    for (auto& c : combos) if (c->isLimiter || c->isNasty) top.add(item("button", c->l.getText(), c->tip, "", c->tog));
+    top.add(item("button", "Settings", gearBtn.getTooltip(), "", gearBtn));
+    top.add(item("button", "Info bubbles", tipsBtn.getTooltip(), "", tipsBtn));
+    for (auto& pn : panels)
+    {
+        auto* po = new juce::DynamicObject(); po->setProperty("title", pn.title);
+        { auto pbx = getLocalArea(&content, pn.box); auto* bo = new juce::DynamicObject(); bo->setProperty("x", pbx.getX()); bo->setProperty("y", pbx.getY()); bo->setProperty("w", pbx.getWidth()); bo->setProperty("h", pbx.getHeight()); po->setProperty("box", juce::var(bo)); }
+        po->setProperty("display", rect(*pn.view));
+        juce::Array<juce::var> its;
+        for (auto* k : pn.ks) { auto r = k->l.getBounds().getUnion(k->s.getBounds()); auto* o = new juce::DynamicObject();
+            o->setProperty("kind", "knob"); o->setProperty("name", k->l.getText()); o->setProperty("tip", k->tip); o->setProperty("value", k->s.getTextFromValue(k->s.getValue()));
+            auto g = getLocalArea(&content, r); auto* b = new juce::DynamicObject(); b->setProperty("x", g.getX()); b->setProperty("y", g.getY()); b->setProperty("w", g.getWidth()); b->setProperty("h", g.getHeight()); o->setProperty("box", juce::var(b)); its.add(juce::var(o)); }
+        if (pn.spBox) its.add(item("menu", "Section presets", "Presets for this section only: they change just these controls and leave the rest as it is.", pn.spBox->getText(), *pn.spBox));
+        for (auto* c : pn.cs) its.add(c->isToggle ? item("button", c->tog.getButtonText(), c->tip, "", c->tog) : item("menu", c->l.getText(), c->tip, c->box.getText(), c->box));
+        po->setProperty("items", its); pans.add(juce::var(po));
+    }
+    auto* root = new juce::DynamicObject(); root->setProperty("name", proc.getName()); root->setProperty("w", getWidth()); root->setProperty("h", getHeight());
+    root->setProperty("top", top); root->setProperty("panels", pans);
+    out.replaceWithText(juce::JSON::toString(juce::var(root)));
 }

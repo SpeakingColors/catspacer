@@ -16,11 +16,11 @@ def tour_story(tdir, key, H2, B, CELL, CELLB, SM, TEAL, PANEL, esc, st):
     if not os.path.exists(p): return []
     d = json.load(open(p)); X = json.load(open(os.path.join(tdir, "extra.json")))[key]
     W = 170 * mm; out = [PageBreak(), Paragraph("Interface tour", H2),
-        Paragraph(esc("Pink numbers mark controls, teal letters mark displays. Every number is explained in the tables on the next pages. The picture is taken from the interactive test page of the plugin, which mirrors the plugin window; the compiled plugin may differ by a few pixels of layout."), B),
+        Paragraph(esc("Pink numbers mark controls, teal letters mark displays. Every number is explained in the tables on the next pages. The picture is a screenshot of the real compiled plugin window."), B),
         Spacer(1, 4), _img(os.path.join(tdir, key + "_full.png"), W), Spacer(1, 6)]
     out.append(Paragraph("Signal flow", st("sf", fontSize=11.5, leading=15, textColor=TEAL, font="Helvetica-Bold", spaceBefore=6, spaceAfter=3)))
     out.append(Paragraph(esc(X["flow"]), B))
-    names = X.get("names", {})
+    names = d["names"] if "names" in d else X.get("names", {})
     hdr = [[Paragraph("<b>No.</b>", CELL), Paragraph("<b>Control</b>", CELL), Paragraph("<b>What it does</b>", CELL)]]
     rows = [[Paragraph(str(t["n"]), CELLB), Paragraph(esc(t["name"]), CELLB), Paragraph(esc(t["tip"]), CELL)] for t in d["top"]]
     def tbl(r):

@@ -78,6 +78,7 @@ private:
     void paintContent(juce::Graphics&);
     void cheekDoubleClick(juce::Point<int>);   // double click on a wood cheek: back to 100%
     void layoutContent();
+    void dumpTour(const juce::File&);   // only when the env var CAT_TOUR_DUMP is set: writes control bounds for the manual's interface tour
     struct K
     {
         juce::Slider s { juce::Slider::RotaryVerticalDrag, juce::Slider::TextBoxBelow };

@@ -6,7 +6,7 @@ Free, open source spectral sidechain ducker for Linux (VST3 and standalone). The
 
 **Manual:** [PDF with interface tour, opens in the browser](https://github.com/SpeakingColors/catspacer/blob/main/docs/CatSpacer-manual.pdf)
 
-<p align="center"><img src="docs/screenshot.png" alt="Cat Spacer editor" width="900"><br><sub>Screenshot of the plugin page in docs/mockups.</sub></p>
+<p align="center"><img src="docs/screenshot.png" alt="Cat Spacer editor" width="900"><br><sub>Screenshot of the real plugin window (Linux standalone build).</sub></p>
 
 ## Features
 - 64 bands (30 Hz to 20 kHz; Trackspacer is documented as 32), STFT, no threshold needed: it follows the loudest sidechain band and ducks the bands that are prominent
