@@ -25,7 +25,7 @@ Call Stack (most recent call first):
   CMakeLists.txt:11 (juce_add_plugin)
 
 
--- Configuring done (126.3s)
+-- Configuring done (130.8s)
 -- Generating done (0.1s)
 CMake Warning (unused-cli):
   Manually-specified variables were not used by the project:
@@ -80,6 +80,7 @@ MSBuild version 18.11.1-1.26513.3+940033be3 for .NET Framework
   FxEditor.cpp
   Plugins.cpp
   CatDucker.cpp
+D:\a\catspacer\catspacer\src\common\FxEditor.cpp(257,37): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\catspacer\catspacer\build\CatSpacer.vcxproj]
   juce_audio_processors.cpp
   juce_gui_extra.cpp
   juce_gui_basics.cpp
