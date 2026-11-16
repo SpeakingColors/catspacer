@@ -151,6 +151,8 @@ jobs:
   package:
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     needs: [manual, windows, macos, linux-native, linux-flatpak]
     runs-on: ubuntu-latest
     steps:
@@ -173,6 +175,10 @@ jobs:
         with:
           name: release-zip
           path: "*.zip"
+      - name: Attest build provenance (signed record of which commit and workflow built this zip)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: "*.zip"
       - name: Publish release
         if: github.ref_type == 'tag' || inputs.tag != ''
         env:
