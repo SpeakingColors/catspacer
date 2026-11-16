@@ -1,0 +1,49 @@
+# Aliasing report for the built effect (report only, it never fails the build). The alias_audit tool comes from cat-ui at a pinned commit:
+# it turns the drive-like knobs up, plays sines at 48 and 192 kHz and estimates the energy that folded back (aliasing). See tools/alias_audit in cat-ui.
+name: aliasing
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'assets/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aliasing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  alias:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libxrandr-dev libxcursor-dev libxcomposite-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev xvfb
+      - name: Build the plugin
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 4
+      - name: Build the alias_audit tool (cat-ui, pinned commit)
+        run: |
+          git clone --quiet https://github.com/SpeakingColors/cat-ui tool-src
+          git -C tool-src checkout --quiet 46a398ffdaec90fe512d76da94d74db1b906c13c
+          cmake -S tool-src/tools/alias_audit -B build-alias -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-alias --parallel 4
+      - name: Measure aliasing (report only)
+        shell: bash
+        run: |
+          A=build-alias/alias_audit_artefacts/Release/alias_audit
+          set +e
+          {
+            echo "## Aliasing report"; echo; echo "Lower is cleaner. Estimate at maximum drive-like settings, see tools/alias_audit in cat-ui."; echo; echo '```'
+            xvfb-run -a "$A" --selftest
+            while IFS= read -r v; do echo; echo "$v"; timeout 900 xvfb-run -a "$A" "$v"; done < <(find build -type d -name "*.vst3")
+            echo '```'
+          } 2>&1 | tee report.md >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with: { name: aliasing-report, path: report.md }
