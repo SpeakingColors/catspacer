@@ -42,7 +42,7 @@ jobs:
             Windows) url=pluginval_Windows.zip; bin=./pluginval.exe ;;
           esac
           mkdir -p pv reports && cd pv
-          curl -sSL -o pv.zip "https://github.com/Tracktion/pluginval/releases/latest/download/$url" && unzip -q pv.zip
+          curl -sSL -o pv.zip "https://github.com/Tracktion/pluginval/releases/download/v1.0.4/$url" && unzip -q pv.zip
           cd ..
           rc=0
           for p in $(find build -name '*.vst3' -maxdepth 6 | sort -u); do
